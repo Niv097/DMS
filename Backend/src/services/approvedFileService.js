@@ -704,26 +704,10 @@ const escapeSvgText = (value = '') => String(value || '')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
 
-const buildControlledWatermarkLines = (note, downloadContext = {}) => {
-  const noteReference = formatPublicDocumentReference(
-    note?.document_group_key || note?.document_code || note?.note_id || '',
-    '',
-    note?.branch || null
-  );
-
-  return [
-    downloadContext.title || 'Controlled Copy',
-    [
-      downloadContext.employeeId ? `Employee ID ${downloadContext.employeeId}` : null,
-      downloadContext.officerName || null
-    ].filter(Boolean).join(' | '),
-    [
-      downloadContext.role ? `${downloadContext.role}` : null,
-      downloadContext.downloadedAt ? downloadContext.downloadedAt : null
-    ].filter(Boolean).join(' | '),
-    noteReference ? `Ref ${noteReference}` : null
-  ].filter(Boolean);
-};
+const buildControlledWatermarkLines = (_note, downloadContext = {}) => [
+  downloadContext.title || 'APPROVED COPY',
+  downloadContext.downloadedAt ? `Downloaded On ${downloadContext.downloadedAt}` : null
+].filter(Boolean);
 
 const drawControlledPdfWatermark = (page, boldFont, regularFont, note, downloadContext) => {
   const { width, height } = page.getSize();
@@ -736,32 +720,37 @@ const drawControlledPdfWatermark = (page, boldFont, regularFont, note, downloadC
   const diagonal = Math.sqrt((width ** 2) + (height ** 2));
   const headlineSize = Math.max(28, Math.min(54, diagonal * 0.05));
   const detailSize = Math.max(10, Math.min(18, headlineSize * 0.34));
-  const anchorX = width * 0.52;
-  const anchorY = height * 0.56;
-
   const headline = lines[0];
-  const headlineWidth = boldFont.widthOfTextAtSize(headline, headlineSize);
-  page.drawText(headline, {
-    x: anchorX - (headlineWidth / 2),
-    y: anchorY,
-    size: headlineSize,
-    font: boldFont,
-    color: rgb(0.48, 0.55, 0.63),
-    opacity: 0.09,
-    rotate: angle
-  });
+  const anchorPoints = [
+    { x: width * 0.28, y: height * 0.3, headlineOpacity: 0.055, detailOpacity: 0.05 },
+    { x: width * 0.52, y: height * 0.56, headlineOpacity: 0.095, detailOpacity: 0.09 },
+    { x: width * 0.76, y: height * 0.82, headlineOpacity: 0.055, detailOpacity: 0.05 }
+  ];
 
-  for (const [index, line] of lines.slice(1).entries()) {
-    const lineWidth = regularFont.widthOfTextAtSize(line, detailSize);
-    page.drawText(line, {
-      x: anchorX - (lineWidth / 2),
-      y: anchorY - ((index + 1) * (detailSize + 8)) - 8,
-      size: detailSize,
-      font: regularFont,
+  for (const anchor of anchorPoints) {
+    const headlineWidth = boldFont.widthOfTextAtSize(headline, headlineSize);
+    page.drawText(headline, {
+      x: anchor.x - (headlineWidth / 2),
+      y: anchor.y,
+      size: headlineSize,
+      font: boldFont,
       color: rgb(0.48, 0.55, 0.63),
-      opacity: 0.085,
+      opacity: anchor.headlineOpacity,
       rotate: angle
     });
+
+    for (const [index, line] of lines.slice(1).entries()) {
+      const lineWidth = regularFont.widthOfTextAtSize(line, detailSize);
+      page.drawText(line, {
+        x: anchor.x - (lineWidth / 2),
+        y: anchor.y - ((index + 1) * (detailSize + 8)) - 8,
+        size: detailSize,
+        font: regularFont,
+        color: rgb(0.48, 0.55, 0.63),
+        opacity: anchor.detailOpacity,
+        rotate: angle
+      });
+    }
   }
 };
 
@@ -772,31 +761,38 @@ const createControlledImageOverlay = (width, height, note, downloadContext) => {
   const diagonal = Math.sqrt((width ** 2) + (height ** 2));
   const headlineSize = Math.max(54, Math.min(104, Math.round(diagonal * 0.065)));
   const detailSize = Math.max(18, Math.round(headlineSize * 0.25));
+  const groups = [
+    { x: width * 0.28, y: height * 0.34, headlineOpacity: 0.08, detailOpacity: 0.07 },
+    { x: width * 0.52, y: height * 0.58, headlineOpacity: 0.12, detailOpacity: 0.1 },
+    { x: width * 0.76, y: height * 0.82, headlineOpacity: 0.08, detailOpacity: 0.07 }
+  ];
 
   return Buffer.from(`
     <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(${width * 0.52}, ${height * 0.58}) rotate(-31)">
-        <text
-          x="0"
-          y="0"
-          text-anchor="middle"
-          fill="rgba(97, 111, 127, 0.12)"
-          font-size="${headlineSize}"
-          font-family="Arial, Helvetica, sans-serif"
-          font-weight="700"
-        >${headline}</text>
-        ${detailLines.map((line, index) => `
+      ${groups.map((group) => `
+        <g transform="translate(${group.x}, ${group.y}) rotate(-31)">
           <text
             x="0"
-            y="${(index + 1) * (detailSize + 16)}"
+            y="0"
             text-anchor="middle"
-            fill="rgba(97, 111, 127, 0.1)"
-            font-size="${detailSize}"
+            fill="rgba(97, 111, 127, ${group.headlineOpacity})"
+            font-size="${headlineSize}"
             font-family="Arial, Helvetica, sans-serif"
-            font-weight="500"
-          >${line}</text>
-        `).join('')}
-      </g>
+            font-weight="700"
+          >${headline}</text>
+          ${detailLines.map((line, index) => `
+            <text
+              x="0"
+              y="${(index + 1) * (detailSize + 16)}"
+              text-anchor="middle"
+              fill="rgba(97, 111, 127, ${group.detailOpacity})"
+              font-size="${detailSize}"
+              font-family="Arial, Helvetica, sans-serif"
+              font-weight="500"
+            >${line}</text>
+          `).join('')}
+        </g>
+      `).join('')}
     </svg>
   `);
 };

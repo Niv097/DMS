@@ -750,7 +750,7 @@ async function validateDownloadEmployee(req, note) {
 
 function buildControlledDownloadContext(user, note) {
   return {
-    title: 'Bank Controlled Copy',
+    title: 'APPROVED COPY',
     officerName: user?.name || 'Bank User',
     employeeId: user?.employee_id || '',
     role: normalizeRole(user?.role?.name || user?.role || ''),

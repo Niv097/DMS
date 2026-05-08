@@ -883,24 +883,25 @@ const Layout = ({ children }) => {
           100% { transform: translateX(320%); }
         }
         .sidebar-watermark {
-          margin-top: 16px;
-          padding: 10px 12px 2px;
+          margin-top: 10px;
+          padding: 8px 12px 0;
           display: flex;
-          gap: 8px;
-          align-items: center;
+          gap: 10px;
+          align-items: flex-start;
         }
         .sidebar-watermark-logo {
-          width: 28px;
-          height: 28px;
+          width: 26px;
+          height: 26px;
           object-fit: contain;
           flex-shrink: 0;
-          opacity: 0.9;
+          opacity: 0.92;
         }
         .sidebar-watermark-company {
-          color: #8190a3;
-          font-size: 11px;
-          line-height: 1.4;
-          font-weight: 500;
+          color: #7c8eab;
+          font-size: 10.5px;
+          line-height: 1.35;
+          font-weight: 600;
+          letter-spacing: 0.01em;
         }
         @media (max-width: 1280px) {
           .topbar-fms-search {
@@ -1251,24 +1252,29 @@ const Layout = ({ children }) => {
 
       <div className="layout-body">
         <aside className={`mobile-menu-drawer ${mobileNavOpen ? 'is-open' : ''}`}>
-          <div className="sidebar-label">Main Menu</div>
-          <div className="sidebar-section">
-            {renderMenuEntries()}
+          <div className="sidebar-main">
+            <div className="sidebar-label">Main Menu</div>
+            <div className="sidebar-section">
+              {renderMenuEntries()}
+            </div>
           </div>
-          <div className="sidebar-label" style={{ marginTop: 'auto' }}>System</div>
-          <div className="sidebar-section">
-            <Link to="/profile" className={isActive('/profile') ? 'active' : ''}>
-              My Profile
-            </Link>
-          </div>
-          <div className="sidebar-watermark">
-            <img src={lumienFooterMark} alt="Lumien" className="sidebar-watermark-logo" />
-            <div className="sidebar-watermark-company">{watermarkText}</div>
+          <div className="sidebar-footer-block">
+            <div className="sidebar-label">System</div>
+            <div className="sidebar-section">
+              <Link to="/profile" className={isActive('/profile') ? 'active' : ''}>
+                My Profile
+              </Link>
+            </div>
+            <div className="sidebar-watermark">
+              <img src={lumienFooterMark} alt="Lumien" className="sidebar-watermark-logo" />
+              <div className="sidebar-watermark-company">{watermarkText}</div>
+            </div>
           </div>
         </aside>
         <aside className="sidebar">
-          <div className="sidebar-label">Main Menu</div>
-          <div className="sidebar-section">
+          <div className="sidebar-main">
+            <div className="sidebar-label">Main Menu</div>
+            <div className="sidebar-section">
             {menuItems.map((item) => {
               if (item.children?.length) {
                 const childActive = item.children.some((child) => location.pathname.startsWith(child.path));
@@ -1302,16 +1308,18 @@ const Layout = ({ children }) => {
               );
             })}
           </div>
-
-          <div className="sidebar-label" style={{ marginTop: 'auto' }}>System</div>
-          <div className="sidebar-section">
-            <Link to="/profile" className={isActive('/profile') ? 'active' : ''}>
-              My Profile
-            </Link>
           </div>
-          <div className="sidebar-watermark">
-            <img src={lumienFooterMark} alt="Lumien" className="sidebar-watermark-logo" />
-            <div className="sidebar-watermark-company">{watermarkText}</div>
+          <div className="sidebar-footer-block">
+            <div className="sidebar-label">System</div>
+            <div className="sidebar-section">
+              <Link to="/profile" className={isActive('/profile') ? 'active' : ''}>
+                My Profile
+              </Link>
+            </div>
+            <div className="sidebar-watermark">
+              <img src={lumienFooterMark} alt="Lumien" className="sidebar-watermark-logo" />
+              <div className="sidebar-watermark-company">{watermarkText}</div>
+            </div>
           </div>
         </aside>
 

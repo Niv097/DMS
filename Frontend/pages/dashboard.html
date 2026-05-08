@@ -1,0 +1,158 @@
+      <div class="page-header">
+        <h1>Dashboard — All Notes</h1>
+        <p>Science City Road Branch (11759) · Ahmedabad Circle</p>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">Total Notes</div>
+          <div class="value" style="color:var(--gray-800)">47</div>
+          <div class="sub">All time</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="label">Pending Action</div>
+          <div class="value">12</div>
+          <div class="sub">Awaiting response</div>
+        </div>
+        <div class="stat-card green">
+          <div class="label">Approved</div>
+          <div class="value">28</div>
+          <div class="sub">Successfully closed</div>
+        </div>
+        <div class="stat-card red">
+          <div class="label">Returned / Rejected</div>
+          <div class="value">7</div>
+          <div class="sub">Needs revision</div>
+        </div>
+      </div>
+
+      <!-- NOTES TABLE -->
+      <div class="card">
+        <div class="card-header">📄 All Notes</div>
+        <div class="card-body">
+          <div class="filter-bar">
+            <input type="text" placeholder="Free text search..." style="width:180px">
+            <select style="width:140px"><option>All Verticals</option><option>CC/GITC</option><option>Circles</option><option>Foreign Offices</option></select>
+            <select style="width:140px"><option>Select Sub-Vertical</option></select>
+            <select style="width:140px"><option>Select Department</option><option>Science City Road Branch</option><option>Transaction Banking Hub</option></select>
+            <select style="width:110px"><option>All Statuses</option><option>Approved</option><option>Pending</option><option>Returned</option><option>Rejected</option></select>
+            <input type="date" style="width:130px" placeholder="From">
+            <input type="date" style="width:130px" placeholder="To">
+            <button class="search-btn">🔍 Search</button>
+            <button class="btn btn-outline btn-sm" onclick="clearFilters()">✕ Clear</button>
+          </div>
+
+          <div class="table-wrap">
+            <table id="notes-table">
+              <thead>
+                <tr>
+                  <th>Note ID</th>
+                  <th>Subject</th>
+                  <th>Status</th>
+                  <th>Last Modified</th>
+                  <th>Initiated Date</th>
+                  <th>Vertical</th>
+                  <th>Department</th>
+                  <th>Initiator</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr onclick="window.location='#/note'">
+                  <td><span class="note-id">NT/NFIN/AHM/NW-1/ZO-11/REG-2/BR-11759/SCI/20260225/SBSC-142</span></td>
+                  <td>Approval for Opening ZBSA CNA Account</td>
+                  <td><span class="badge badge-green">Approved</span></td>
+                  <td>7/3/2026, 10:48 AM</td>
+                  <td>25/2/2026, 6:45 PM</td>
+                  <td>—</td>
+                  <td>Science City Road Branch</td>
+                  <td class="text-mono">sbi.11759@sbi.co.in</td>
+                </tr>
+                <tr onclick="window.location='#/note'">
+                  <td><span class="note-id">NT/NFIN/AHM/NW-1/ZO-11/REG-2/BR-11759/SCI/20260201/SBSC-144</span></td>
+                  <td>Payment of Interest on Staff OD A/C — Vijay Pandit</td>
+                  <td><span class="badge badge-amber">Pending</span></td>
+                  <td>17/3/2026, 5:15 PM</td>
+                  <td>3/12/2025, 10:35 AM</td>
+                  <td>—</td>
+                  <td>Science City Road Branch</td>
+                  <td class="text-mono">sbi.11759@sbi.co.in</td>
+                </tr>
+                <tr onclick="window.location='#/note'">
+                  <td><span class="note-id">NT/NFIN/AHM/NW-1/ZO-11/REG-2/BR-11759/SCI/20260225/SBSC-143</span></td>
+                  <td>Approval for Opening ZBSA CNA Account</td>
+                  <td><span class="badge badge-red">Returned</span></td>
+                  <td>9/3/2026, 8:41 PM</td>
+                  <td>9/3/2026, 11:05 AM</td>
+                  <td>—</td>
+                  <td>Science City Road Branch</td>
+                  <td class="text-mono">sbi.11759@sbi.co.in</td>
+                </tr>
+                <tr onclick="window.location='#/note'">
+                  <td><span class="note-id">NT/NFIN/CC/COO/RnDB-OPS/VMCC/20240514/OMPR-240</span></td>
+                  <td>Review of Parameters of Circle &amp; Network Operational Excellence Ranking W.E.F. April 2024</td>
+                  <td><span class="badge badge-green">Approved</span></td>
+                  <td>21/5/2024, 12:49 PM</td>
+                  <td>14/5/2024, 7:58 PM</td>
+                  <td>CC/GITC</td>
+                  <td>Vendor Management Dept.</td>
+                  <td class="text-mono">om.dhiraj@sbi.co.in</td>
+                </tr>
+                <tr onclick="window.location='#/note'">
+                  <td><span class="note-id">NT/NFIN/AHM/NW-1/ZO-11/REG-2/BR-11759/SCI/20260225/SBSC-141</span></td>
+                  <td>Faijnben Vadhela 20164539149</td>
+                  <td><span class="badge badge-red">Returned</span></td>
+                  <td>23/2/2026, 5:56 PM</td>
+                  <td>20/2/2026, 2:24 PM</td>
+                  <td>—</td>
+                  <td>Science City Road Branch</td>
+                  <td class="text-mono">sbi.11759@sbi.co.in</td>
+                </tr>
+                <tr onclick="window.location='#/note'">
+                  <td><span class="note-id">NT/NFIN/AHM/NW-1/ZO-11/REG-2/BR-11759/SCI/20260225/SBSC-140</span></td>
+                  <td>Faijnben Vadhela 20164539149</td>
+                  <td><span class="badge badge-red">Returned</span></td>
+                  <td>23/2/2026, 6:39 PM</td>
+                  <td>23/2/2026, 12:08 PM</td>
+                  <td>—</td>
+                  <td>Science City Road Branch</td>
+                  <td class="text-mono">sbi.11759@sbi.co.in</td>
+                </tr>
+                <tr onclick="window.location='#/note'">
+                  <td><span class="note-id">NT/NFIN/AHM/NW-1/ZO-11/REG-2/BR-11759/SCI/20260225/SBSC-138</span></td>
+                  <td>Request for Permanent Increase in CBS Capability from 5 to 7</td>
+                  <td><span class="badge badge-red" style="background:#fce7f3;color:#831843">Rejected</span></td>
+                  <td>25/2/2026, 11:17 AM</td>
+                  <td>7/2/2026, 6:30 PM</td>
+                  <td>—</td>
+                  <td>Science City Road Branch</td>
+                  <td class="text-mono">sbi.11759@sbi.co.in</td>
+                </tr>
+                <tr onclick="window.location='#/note'">
+                  <td><span class="note-id">NT/NFIN/AHM/NW-1/ZO-11/REG-2/BR-11759/SCI/20260225/SBSC-127</span></td>
+                  <td>Deviation Mahendra Kareliya 31394482593</td>
+                  <td><span class="badge badge-red">Returned</span></td>
+                  <td>11/2/2026, 12:53 PM</td>
+                  <td>2/2/2026, 6:48 PM</td>
+                  <td>—</td>
+                  <td>Science City Road Branch</td>
+                  <td class="text-mono">sbi.11759@sbi.co.in</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            Showing 8 of 47 entries &nbsp;|&nbsp; Show:
+            <select onchange="console.log(this.value)"><option>15</option><option>25</option><option>50</option><option>100</option></select>
+            &nbsp;entries per page
+            <div style="margin-left:auto;display:flex;gap:4px">
+              <button class="btn btn-outline btn-sm">‹ Prev</button>
+              <button class="btn btn-outline btn-sm" style="background:var(--blue-pale);color:var(--blue-primary)">1</button>
+              <button class="btn btn-outline btn-sm">2</button>
+              <button class="btn btn-outline btn-sm">3</button>
+              <button class="btn btn-outline btn-sm">Next ›</button>
+            </div>
+          </div>
+        </div>
+      </div>

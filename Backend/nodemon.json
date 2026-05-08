@@ -1,0 +1,20 @@
+{
+  "watch": [
+    "src",
+    "prisma"
+  ],
+  "ext": "js,json,prisma",
+  "ignore": [
+    "uploads/**",
+    "logs/**",
+    "backups/**",
+    "email-previews/**",
+    "*.log",
+    "run.out.log",
+    "run.err.log",
+    "backend.log",
+    "backend.err.log",
+    "backend-start.log",
+    "backend-start.err.log"
+  ]
+}

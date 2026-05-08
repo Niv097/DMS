@@ -1,0 +1,29 @@
+{
+  "document_group_key": "DMS/HO/2026/0009",
+  "note_id": "DOC/DMS/HO/2026/0009",
+  "document_code": "DOC/DMS/HO/2026/0009",
+  "version_number": 1,
+  "workflow_type": "STRICT",
+  "status": "FINAL_APPROVED",
+  "workflow_state": "APPROVED",
+  "queue_code": "APPROVED_CLOSED_HISTORY",
+  "current_owner_user_id": 1,
+  "next_responsible_user_id": null,
+  "subject": "SYSTEM ERROR",
+  "tenant_id": 1,
+  "branch_id": 1,
+  "stage": "FINAL_APPROVED",
+  "files": {
+    "main": {
+      "file_name": "shopping.webp",
+      "file_path": "uploads/workflows/DMS_HO_2026_0009/v1/attachments/main/main_note-1777380935339-138424391-shopping.webp"
+    },
+    "supporting": [],
+    "approved": {
+      "file_name": "shopping-approved-v1.webp",
+      "file_path": "uploads/workflows/DMS_HO_2026_0009/v1/approved/shopping-approved-v1.webp",
+      "mime": "image/webp"
+    }
+  },
+  "updated_at": "2026-05-04T19:01:36.280Z"
+}

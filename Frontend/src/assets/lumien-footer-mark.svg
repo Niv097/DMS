@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lumienFooterGradient" x1="8" y1="10" x2="56" y2="54" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F5FD3"/>
+      <stop offset="1" stop-color="#C08BEA"/>
+    </linearGradient>
+  </defs>
+  <path d="M13 36L21 17L33 24L45 19L53 37L44 52L26 55L13 36Z" stroke="url(#lumienFooterGradient)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M21 17L33 24L45 19" stroke="url(#lumienFooterGradient)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M13 36L33 24L44 52" stroke="url(#lumienFooterGradient)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M26 55L33 24L53 37" stroke="url(#lumienFooterGradient)" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="13" cy="36" r="4" fill="url(#lumienFooterGradient)"/>
+  <circle cx="21" cy="17" r="4" fill="url(#lumienFooterGradient)"/>
+  <circle cx="33" cy="24" r="5" fill="url(#lumienFooterGradient)"/>
+  <circle cx="45" cy="19" r="4" fill="url(#lumienFooterGradient)"/>
+  <circle cx="53" cy="37" r="4" fill="url(#lumienFooterGradient)"/>
+  <circle cx="44" cy="52" r="5" fill="url(#lumienFooterGradient)"/>
+  <circle cx="26" cy="55" r="4" fill="url(#lumienFooterGradient)"/>
+</svg>

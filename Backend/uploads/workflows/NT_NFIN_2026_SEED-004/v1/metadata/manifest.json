@@ -1,0 +1,29 @@
+{
+  "document_group_key": "NT/NFIN/2026/SEED-004",
+  "note_id": "NT/NFIN/2026/SEED-004",
+  "document_code": null,
+  "version_number": 1,
+  "workflow_type": "Standard",
+  "status": "FINAL_APPROVED",
+  "workflow_state": "DRAFT",
+  "queue_code": "DRAFTS",
+  "current_owner_user_id": 1,
+  "next_responsible_user_id": null,
+  "subject": "Seed Note D - Final Approved",
+  "tenant_id": null,
+  "branch_id": null,
+  "stage": "FINAL_APPROVED",
+  "files": {
+    "main": {
+      "file_name": "seed-note-004.pdf",
+      "file_path": "uploads/seed-note-004.pdf"
+    },
+    "supporting": [],
+    "approved": {
+      "file_name": "seed-note-004-approved-v1.pdf",
+      "file_path": "uploads/workflows/NT_NFIN_2026_SEED-004/v1/approved/seed-note-004-approved-v1.pdf",
+      "mime": "application/pdf"
+    }
+  },
+  "updated_at": "2026-04-25T13:44:50.581Z"
+}

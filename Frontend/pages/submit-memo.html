@@ -1,0 +1,36 @@
+      <div class="breadcrumb"><a href="#/">Home</a> › <span>Submit Memo</span></div>
+      <div class="page-header"><h1>Submit Memo</h1><p>Internal memo routing with simplified workflow</p></div>
+      <div class="card">
+        <div class="card-header blue">📋 Memo Details</div>
+        <div class="card-body">
+          <div class="form-grid cols-2" style="margin-bottom:14px">
+            <div class="form-group">
+              <label>Vertical <span class="req">*</span></label>
+              <select><option>Select Vertical</option><option>Associates and Subsidiaries</option><option>Operations</option></select>
+            </div>
+            <div class="form-group">
+              <label>Department <span class="req">*</span></label>
+              <select><option>Select Department</option><option>Science City Road Branch</option></select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label>Subject <span class="req">*</span></label>
+            <input type="text" placeholder="Enter memo subject">
+          </div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label>Memo Body <span class="req">*</span></label>
+            <textarea placeholder="Type memo content here..." style="height:160px"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Attachments</label>
+            <div class="upload-box">
+              📎 Drop files here or <label class="browse-btn" for="memo-file">Browse</label>
+              <input type="file" id="memo-file" style="display:none" multiple>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="action-row">
+        <a href="#/" class="btn btn-outline">Cancel</a>
+        <button class="btn btn-primary">📤 Submit Memo</button>
+      </div>

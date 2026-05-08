@@ -1,0 +1,25 @@
+{
+  "document_group_key": "DOC/DMS/HO/2026/0002",
+  "note_id": "DOC/DMS/HO/2026/0002",
+  "document_code": "DOC/DMS/HO/2026/0002",
+  "version_number": 1,
+  "workflow_type": "STRICT",
+  "status": "UPLOADED",
+  "workflow_state": "DRAFT",
+  "queue_code": "DRAFTS",
+  "current_owner_user_id": 7,
+  "next_responsible_user_id": null,
+  "subject": "Test Upload",
+  "tenant_id": 1,
+  "branch_id": 1,
+  "stage": "UPLOADED",
+  "files": {
+    "main": {
+      "file_name": "seed-note-001.pdf",
+      "file_path": "uploads/workflows/DOC_DMS_HO_2026_0002/v1/attachments/main/seed-note-001.pdf"
+    },
+    "supporting": [],
+    "approved": null
+  },
+  "updated_at": "2026-04-24T08:51:44.065Z"
+}

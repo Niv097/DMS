@@ -1,0 +1,15 @@
+ALTER TABLE "Tenant"
+  ADD COLUMN IF NOT EXISTS "deployment_mode" TEXT NOT NULL DEFAULT 'SHARED',
+  ADD COLUMN IF NOT EXISTS "support_base_url" TEXT,
+  ADD COLUMN IF NOT EXISTS "support_access_mode" TEXT NOT NULL DEFAULT 'REMOTE_API',
+  ADD COLUMN IF NOT EXISTS "support_login_username" TEXT,
+  ADD COLUMN IF NOT EXISTS "support_contact_name" TEXT,
+  ADD COLUMN IF NOT EXISTS "support_contact_email" TEXT,
+  ADD COLUMN IF NOT EXISTS "support_contact_phone" TEXT,
+  ADD COLUMN IF NOT EXISTS "support_api_key_ciphertext" TEXT,
+  ADD COLUMN IF NOT EXISTS "support_last_checked_at" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "support_last_success_at" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "support_last_status" TEXT,
+  ADD COLUMN IF NOT EXISTS "support_last_error" TEXT,
+  ADD COLUMN IF NOT EXISTS "license_plan" TEXT,
+  ADD COLUMN IF NOT EXISTS "license_valid_until" TIMESTAMP(3);

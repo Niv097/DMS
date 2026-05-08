@@ -1,0 +1,2 @@
+ALTER TABLE "Branch"
+ADD COLUMN IF NOT EXISTS "branch_address" TEXT;

@@ -1,0 +1,305 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int           @id @default(autoincrement())
+  user_id         String?       @unique
+  name            String
+  username        String?       @unique
+  email           String        @unique
+  employee_id     String?       @unique
+  date_of_birth   DateTime?     @db.Date
+  password_hash   String
+  role_id         Int
+  tenant_id       Int?
+  branch_id       Int?
+  department_id   Int?
+  vertical_id     Int?
+  is_active       Boolean       @default(true)
+  is_first_login  Boolean       @default(false)
+  must_change_password Boolean  @default(false)
+  temp_password_hash String?
+  accessible_branch_ids Json?
+  created_at      DateTime      @default(now())
+
+  role            Role          @relation(fields: [role_id], references: [id])
+  tenant          Tenant?       @relation(fields: [tenant_id], references: [id])
+  branch          Branch?       @relation(fields: [branch_id], references: [id])
+  department      Department?   @relation(fields: [department_id], references: [id])
+  vertical        Vertical?     @relation(fields: [vertical_id], references: [id])
+  branch_accesses UserBranchAccess[]
+
+  initiated_notes Note[]        @relation("InitiatedNotes")
+  workflow_steps  WorkflowStep[]
+  comments        Comment[]
+  note_actions    NoteAction[]
+  rejection_highlights RejectionHighlight[]
+  notifications   Notification[]
+  login_otp_challenges LoginOtpChallenge[]
+}
+
+model LoginOtpChallenge {
+  id            String   @id @db.Uuid
+  user_id       Int
+  channel       String
+  destination   String
+  code_hash     String
+  expires_at    DateTime
+  consumed_at   DateTime?
+  created_at    DateTime @default(now())
+  last_sent_at  DateTime @default(now())
+  attempt_count Int      @default(0)
+  max_attempts  Int      @default(5)
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at])
+  @@index([expires_at])
+}
+
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique // INITIATOR, RECOMMENDER, APPROVER, CONTROLLER, ADMIN, SUPER_ADMIN, AUDITOR
+  users User[]
+}
+
+model Tenant {
+  id                    Int      @id @default(autoincrement())
+  tenant_name           String
+  tenant_code           String   @unique
+  backup_policy_enabled Boolean  @default(true)
+  backup_frequency      String   @default("DAILY")
+  backup_retention_days Int      @default(30)
+  backup_window_hour    Int      @default(18)
+  backup_window_minute  Int      @default(0)
+  vendor_mirror_enabled Boolean  @default(true)
+  backup_last_completed_at DateTime?
+  backup_next_due_at    DateTime?
+  created_at            DateTime @default(now())
+
+  branches    Branch[]
+  users       User[]
+  notes       Note[]
+  audit_logs  AuditLog[]
+  notifications Notification[]
+
+  @@unique([tenant_name, tenant_code])
+}
+
+model Branch {
+  id          Int      @id @default(autoincrement())
+  branch_name String
+  branch_code String
+  tenant_id   Int
+  created_at  DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  users       User[]
+  notes       Note[]
+  audit_logs  AuditLog[]
+  branch_accesses UserBranchAccess[]
+  notifications Notification[]
+
+  @@unique([tenant_id, branch_code])
+}
+
+model UserBranchAccess {
+  id         Int      @id @default(autoincrement())
+  user_id     Int
+  branch_id   Int
+  created_at  DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [id])
+  branch     Branch   @relation(fields: [branch_id], references: [id])
+
+  @@unique([user_id, branch_id])
+}
+
+model Department {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+  notes Note[]
+}
+
+model Vertical {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+  notes Note[]
+}
+
+model Note {
+  id                Int           @id @default(autoincrement())
+  note_id           String        @unique // NT/NFIN/2026/0001
+  document_code     String?       @unique
+  document_group_key String
+  version_number    Int           @default(1)
+  previous_version_id Int?
+  is_latest_version Boolean       @default(true)
+  subject           String
+  note_type         String
+  workflow_type     String
+  initiator_id      Int
+  tenant_id         Int?
+  branch_id         Int?
+  department_id     Int
+  vertical_id       Int
+  status            String        @default("UPLOADED") // UPLOADED, REJECTED, RECOMMENDED, FINAL_APPROVED, SUPERSEDED, ARCHIVED
+  approved_file_name String?
+  approved_file_path String?
+  approved_file_mime String?
+  approved_at       DateTime?
+  approved_by_name  String?
+  approved_by_role  String?
+  approval_note     String?       @db.Text
+  archived_at       DateTime?
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+
+  initiator         User          @relation("InitiatedNotes", fields: [initiator_id], references: [id])
+  tenant            Tenant?       @relation(fields: [tenant_id], references: [id])
+  branch            Branch?       @relation(fields: [branch_id], references: [id])
+  department        Department    @relation(fields: [department_id], references: [id])
+  vertical          Vertical      @relation(fields: [vertical_id], references: [id])
+  previous_version  Note?         @relation("NoteVersionChain", fields: [previous_version_id], references: [id])
+  next_versions     Note[]        @relation("NoteVersionChain")
+
+  workflow_steps    WorkflowStep[]
+  attachments       Attachment[]
+  comments          Comment[]
+  audit_logs        AuditLog[]
+  note_actions      NoteAction[]
+  rejection_highlights RejectionHighlight[]
+
+  @@index([document_group_key, version_number])
+  @@index([document_group_key, is_latest_version])
+  @@index([status, is_latest_version])
+  @@index([tenant_id, branch_id, status])
+}
+
+model WorkflowStep {
+  id               Int           @id @default(autoincrement())
+  note_id          Int
+  sequence         Int
+  role_type        String        // RECOMMENDER, APPROVER, CONTROLLER
+  assigned_user_id Int?
+  status           String        @default("PENDING") // PENDING, COMPLETED, REJECTED, REFERRED_BACK
+  action_date      DateTime?
+
+  note             Note          @relation(fields: [note_id], references: [id])
+  assigned_user    User?         @relation(fields: [assigned_user_id], references: [id])
+}
+
+model Attachment {
+  id          Int      @id @default(autoincrement())
+  note_id     Int
+  file_name   String
+  file_path   String
+  file_type   String   // MAIN, SUPPORTING
+  uploaded_at DateTime @default(now())
+
+  note        Note     @relation(fields: [note_id], references: [id])
+  audit_logs  AuditLog[]
+
+  @@index([note_id, file_type])
+}
+
+model Comment {
+  id           Int      @id @default(autoincrement())
+  note_id      Int
+  user_id      Int
+  comment_text String   @db.Text
+  created_at   DateTime @default(now())
+
+  note         Note     @relation(fields: [note_id], references: [id])
+  user         User     @relation(fields: [user_id], references: [id])
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  note_id      Int
+  tenant_id    Int?
+  branch_id    Int?
+  version_number Int?
+  attachment_id Int?
+  file_type    String?
+  file_name    String?
+  action       String
+  performed_by String
+  role         String
+  remarks      String?  @db.Text
+  timestamp    DateTime @default(now())
+
+  note         Note     @relation(fields: [note_id], references: [id])
+  tenant       Tenant?  @relation(fields: [tenant_id], references: [id])
+  branch       Branch?  @relation(fields: [branch_id], references: [id])
+  attachment   Attachment? @relation(fields: [attachment_id], references: [id])
+
+  @@index([note_id, file_type])
+  @@index([attachment_id])
+  @@index([tenant_id, branch_id, timestamp])
+}
+
+model NoteAction {
+  id          Int      @id @default(autoincrement())
+  note_id     Int
+  user_id     Int
+  action_type String
+  comment     String?  @db.Text
+  timestamp   DateTime @default(now())
+
+  note        Note     @relation(fields: [note_id], references: [id])
+  user        User     @relation(fields: [user_id], references: [id])
+}
+
+model RejectionHighlight {
+  id                 Int      @id @default(autoincrement())
+  note_id            Int
+  document_group_key String
+  version_number     Int
+  page_number        Int
+  x                  Float
+  y                  Float
+  width              Float
+  height             Float
+  created_by_user_id Int
+  created_at         DateTime @default(now())
+
+  note               Note     @relation(fields: [note_id], references: [id])
+  created_by_user    User     @relation(fields: [created_by_user_id], references: [id])
+
+  @@index([note_id, page_number])
+  @@index([document_group_key, version_number])
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  tenant_id   Int?
+  branch_id   Int?
+  title       String
+  message     String   @db.Text
+  category    String   @default("GENERAL")
+  entity_type String?
+  entity_id   Int?
+  is_read     Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  user        User     @relation(fields: [user_id], references: [id])
+  tenant      Tenant?  @relation(fields: [tenant_id], references: [id])
+  branch      Branch?  @relation(fields: [branch_id], references: [id])
+
+  @@index([user_id, is_read, created_at])
+  @@index([tenant_id, branch_id, created_at])
+}
+

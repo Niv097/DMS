@@ -1,0 +1,63 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "worker": "node src/worker.js",
+    "preflight:prod": "node scripts/preflight-prod.mjs",
+    "generate:jwt-secret": "node scripts/generate-jwt-secret.mjs",
+    "retention:prune": "node scripts/prune-retention.mjs",
+    "backup:db": "node scripts/backup-db.mjs",
+    "backup:storage": "node scripts/backup-storage.mjs",
+    "backup:all": "node scripts/backup-all.mjs",
+    "dr:export": "node scripts/export-dr-package.mjs",
+    "dr:import": "node scripts/import-dr-package.mjs",
+    "restore:db": "node scripts/restore-db.mjs",
+    "backfill:dms-fms-history": "node scripts/backfill-dms-fms-history.mjs",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "prisma:db:push": "prisma db push --schema prisma/schema.prisma",
+    "prisma:validate": "prisma validate --schema prisma/schema.prisma",
+    "prisma:schema:sync": "node scripts/sync-prisma-schema.mjs",
+    "security:audit": "npm audit --production --audit-level=high",
+    "security:check": "npm run prisma:validate && npm audit --production --audit-level=high",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.6.0",
+    "@prisma/client": "^6.1.0",
+    "bcrypt": "^6.0.0",
+    "bullmq": "^5.73.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.0",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "ioredis": "^5.10.1",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.0",
+    "multer": "^2.1.1",
+    "nodemailer": "^6.10.1",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.20.0",
+    "sharp": "^0.34.5",
+    "tesseract.js": "^5.1.0",
+    "winston": "^3.13.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "prisma": "^6.1.0",
+    "tsx": "^4.21.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js",
+    "schema": "prisma/schema.prisma"
+  }
+}

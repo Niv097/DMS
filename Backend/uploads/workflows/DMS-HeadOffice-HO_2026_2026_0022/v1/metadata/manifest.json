@@ -1,0 +1,29 @@
+{
+  "document_group_key": "DMS-HeadOffice-HO/2026/2026/0022",
+  "note_id": "DOC/DMS/HO/2026/0022",
+  "document_code": "DOC/DMS/HO/2026/0022",
+  "version_number": 1,
+  "workflow_type": "STRICT",
+  "status": "FINAL_APPROVED",
+  "workflow_state": "APPROVED",
+  "queue_code": "APPROVED_CLOSED_HISTORY",
+  "current_owner_user_id": 1,
+  "next_responsible_user_id": null,
+  "subject": "FINAL-UAT-20260507-200547",
+  "tenant_id": 1,
+  "branch_id": 1,
+  "stage": "FINAL_APPROVED",
+  "files": {
+    "main": {
+      "file_name": "tmp-test.pdf",
+      "file_path": "uploads/workflows/DMS-HeadOffice-HO_2026_2026_0022/v1/attachments/main/main_note-1778164547285-863556242-tmp-test.pdf"
+    },
+    "supporting": [],
+    "approved": {
+      "file_name": "tmp-test-approved-v1.pdf",
+      "file_path": "uploads/workflows/DMS-HeadOffice-HO_2026_2026_0022/v1/approved/tmp-test-approved-v1.pdf",
+      "mime": "application/pdf"
+    }
+  },
+  "updated_at": "2026-05-07T14:35:50.160Z"
+}

@@ -1,0 +1,44 @@
+<!-- ===== SHARED TOPBAR — include in every page ===== -->
+<!-- Usage: copy this block into each HTML page, adjust "active" class on the right nav link -->
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <span>DMS</span>
+    <small>Document Management System</small>
+  </div>
+  <nav class="topbar-nav">
+    <a href="index.html"       class="active" id="nav-home">🏠 Home</a>
+    <a href="submit.html"      id="nav-submit">📝 Submit Note</a>
+    <a href="submit-memo.html" id="nav-memo">📋 Submit Memo</a>
+    <a href="help.html"        id="nav-help">❓ Help</a>
+    <a href="spoc.html"        id="nav-spoc">📞 SPOC Details</a>
+    <a href="view.html"        id="nav-view">👁 View</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="topbar-user">Logged in as <strong>sbi.11759@sbi.co.in</strong></div>
+    <a href="submit.html" class="btn-submit-top">+ Submit Note</a>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-label">Notes</div>
+  <div class="sidebar-section">
+    <a href="index.html" class="active"><span class="icon">🏠</span> Dashboard</a>
+    <a href="submit.html"><span class="icon">✏️</span> New Note</a>
+    <a href="index.html?filter=pending"><span class="icon">⏳</span> Pending Action <span class="badge-count">12</span></a>
+    <a href="index.html?filter=approved"><span class="icon">✅</span> Approved</a>
+    <a href="index.html?filter=returned"><span class="icon">↩️</span> Returned</a>
+  </div>
+  <div class="sidebar-label">Review</div>
+  <div class="sidebar-section">
+    <a href="review.html"><span class="icon">📋</span> For My Action <span class="badge-count">3</span></a>
+    <a href="index.html?role=recommender"><span class="icon">🔍</span> As Recommender</a>
+    <a href="index.html?role=approver"><span class="icon">🔏</span> As Approver</a>
+  </div>
+  <div class="sidebar-label">Settings</div>
+  <div class="sidebar-section">
+    <a href="#"><span class="icon">⚙️</span> Profile</a>
+  </div>
+</aside>

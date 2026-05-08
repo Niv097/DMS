@@ -1,0 +1,90 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  backend-security:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Validate Prisma schema
+        run: npm run prisma:validate
+
+      - name: Audit backend dependencies
+        id: backend_audit
+        continue-on-error: true
+        run: npm audit --production --audit-level=high --json > backend-npm-audit.json
+
+      - name: Upload backend audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-npm-audit
+          path: Backend/backend-npm-audit.json
+
+      - name: Fail on backend high vulnerabilities
+        if: steps.backend_audit.outcome == 'failure'
+        run: npm run security:audit
+
+  frontend-security:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Audit frontend dependencies
+        id: frontend_audit
+        continue-on-error: true
+        run: npm audit --production --audit-level=high --json > frontend-npm-audit.json
+
+      - name: Upload frontend audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-npm-audit
+          path: Frontend/frontend-npm-audit.json
+
+      - name: Fail on frontend high vulnerabilities
+        if: steps.frontend_audit.outcome == 'failure'
+        run: npm run security:audit

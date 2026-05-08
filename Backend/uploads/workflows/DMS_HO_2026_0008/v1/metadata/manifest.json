@@ -1,0 +1,30 @@
+{
+  "document_group_key": "DMS/HO/2026/0008",
+  "note_id": "DOC/DMS/HO/2026/0008",
+  "document_code": "DOC/DMS/HO/2026/0008",
+  "version_number": 1,
+  "workflow_type": "STRICT",
+  "status": "UPLOADED",
+  "workflow_state": "DRAFT",
+  "queue_code": "DRAFTS",
+  "current_owner_user_id": 1,
+  "next_responsible_user_id": null,
+  "subject": "NIV SAPRA - BANK ACCOUNT OPEN",
+  "tenant_id": 1,
+  "branch_id": 1,
+  "stage": "UPLOADED",
+  "files": {
+    "main": {
+      "file_name": "download (1).jpg",
+      "file_path": "uploads/workflows/DMS_HO_2026_0008/v1/attachments/main/main_note-1777380403429-777552540-download-1.jpg"
+    },
+    "supporting": [
+      {
+        "file_name": "download.jpg",
+        "file_path": "uploads/workflows/DMS_HO_2026_0008/v1/attachments/supporting/01-annexures-1777380403430-190176078-download.jpg"
+      }
+    ],
+    "approved": null
+  },
+  "updated_at": "2026-04-28T12:47:26.481Z"
+}

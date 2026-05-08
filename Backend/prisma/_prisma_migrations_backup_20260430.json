@@ -1,0 +1,42 @@
+[
+  {
+    "id": "dedf4e53-f473-497d-a2f0-da26b72393f1",
+    "checksum": "f4453defdd603aac39f4dd0de9097796be1a6b97cfd57b44e6f92d915ba3cd5e",
+    "finished_at": "2026-04-20T07:42:30.046Z",
+    "migration_name": "20260407084513_step1_schema_creation",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-04-20T07:42:29.896Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "3e4066fc-da3c-41b5-9d69-4ac1d4be3447",
+    "checksum": "5aaf62b08ba22cdb548749a7c26458a8a5a326fb0ab0b6492ffd3888f3a5d27c",
+    "finished_at": "2026-04-20T07:42:30.053Z",
+    "migration_name": "20260407085534_rename_audit_comment_to_remarks",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-04-20T07:42:30.047Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "2c7d0658-52c2-482a-adf1-38b3d432ba56",
+    "checksum": "473703e2713d3b1a44a1c58a920551b25aa1dddb56fccf8ca7a74a1eb3ff4e64",
+    "finished_at": null,
+    "migration_name": "20260404084007_init",
+    "logs": "A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20260404084007_init\n\nDatabase error code: 42P07\n\nDatabase error:\nERROR: relation \"User\" already exists\n\nDbError { severity: \"ERROR\", parsed_severity: Some(Error), code: SqlState(E42P07), message: \"relation \\\"User\\\" already exists\", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some(\"heap.c\"), line: Some(1179), routine: Some(\"heap_create_with_catalog\") }\n\n",
+    "rolled_back_at": "2026-04-24T08:43:50.721Z",
+    "started_at": "2026-04-20T16:54:34.724Z",
+    "applied_steps_count": 0
+  },
+  {
+    "id": "eebc1324-fec7-40dd-a228-ed86fcf74c6a",
+    "checksum": "473703e2713d3b1a44a1c58a920551b25aa1dddb56fccf8ca7a74a1eb3ff4e64",
+    "finished_at": null,
+    "migration_name": "20260404084007_init",
+    "logs": "A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20260404084007_init\n\nDatabase error code: 42P07\n\nDatabase error:\nERROR: relation \"User\" already exists\n\nDbError { severity: \"ERROR\", parsed_severity: Some(Error), code: SqlState(E42P07), message: \"relation \\\"User\\\" already exists\", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some(\"heap.c\"), line: Some(1179), routine: Some(\"heap_create_with_catalog\") }\n\n",
+    "rolled_back_at": null,
+    "started_at": "2026-04-24T08:44:56.495Z",
+    "applied_steps_count": 0
+  }
+]

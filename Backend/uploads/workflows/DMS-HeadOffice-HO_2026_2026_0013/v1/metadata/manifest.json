@@ -1,0 +1,25 @@
+{
+  "document_group_key": "DMS-HeadOffice-HO/2026/2026/0013",
+  "note_id": "DOC/DMS/HO/2026/0013",
+  "document_code": "DOC/DMS/HO/2026/0013",
+  "version_number": 1,
+  "workflow_type": "STRICT",
+  "status": "UPLOADED",
+  "workflow_state": "DRAFT",
+  "queue_code": "DRAFTS",
+  "current_owner_user_id": 1,
+  "next_responsible_user_id": null,
+  "subject": "fms2",
+  "tenant_id": 1,
+  "branch_id": 1,
+  "stage": "UPLOADED",
+  "files": {
+    "main": {
+      "file_name": "RAJ.pdf",
+      "file_path": "uploads/workflows/DMS-HeadOffice-HO_2026_2026_0013/v1/attachments/main/main_note-1777906155261-803008891-RAJ.pdf"
+    },
+    "supporting": [],
+    "approved": null
+  },
+  "updated_at": "2026-05-04T14:49:17.349Z"
+}

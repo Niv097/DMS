@@ -1,0 +1,878 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int           @id @default(autoincrement())
+  user_id         String?       @unique
+  name            String
+  username        String?       @unique
+  email           String
+  employee_id     String?       @unique
+  mobile_number   String?
+  credential_delivery_mode String @default("EMAIL")
+  date_of_birth   DateTime?     @db.Date
+  password_hash   String
+  role_id         Int
+  tenant_id       Int?
+  branch_id       Int?
+  department_id   Int?
+  vertical_id     Int?
+  is_active       Boolean       @default(true)
+  is_first_login  Boolean       @default(false)
+  must_change_password Boolean  @default(false)
+  temp_password_hash String?
+  accessible_branch_ids Json?
+  failed_attempts   Int         @default(0)
+  lock_until        DateTime?
+  fms_enabled     Boolean       @default(false)
+  fms_permissions Json?
+  password_changed_at DateTime?
+  created_at      DateTime      @default(now())
+
+  role            Role          @relation(fields: [role_id], references: [id])
+  tenant          Tenant?       @relation(fields: [tenant_id], references: [id])
+  branch          Branch?       @relation(fields: [branch_id], references: [id])
+  department      Department?   @relation(fields: [department_id], references: [id])
+  vertical        Vertical?     @relation(fields: [vertical_id], references: [id])
+  branch_accesses UserBranchAccess[]
+
+  initiated_notes Note[]        @relation("InitiatedNotes")
+  current_owned_notes Note[]    @relation("CurrentOwnedNotes")
+  next_responsible_notes Note[] @relation("NextResponsibleNotes")
+  last_action_notes Note[]      @relation("LastActionNotes")
+  workflow_steps  WorkflowStep[]
+  comments        Comment[]
+  note_actions    NoteAction[]
+  sent_note_movements NoteMovement[] @relation("MovementFromUser")
+  received_note_movements NoteMovement[] @relation("MovementToUser")
+  acted_note_movements NoteMovement[] @relation("MovementActor")
+  rejection_highlights RejectionHighlight[]
+  notifications   Notification[]
+  login_otp_challenges LoginOtpChallenge[]
+  sessions        Session[]
+  fms_uploaded_documents FmsDocument[] @relation("FmsUploadedDocuments")
+  fms_published_documents FmsDocument[] @relation("FmsPublishedDocuments")
+  fms_access_grants FmsDocumentAccessGrant[] @relation("FmsGrantedUsers")
+  fms_node_access_grants FmsNodeAccessGrant[] @relation("FmsNodeGrantedUsers")
+  fms_node_access_grants_requested FmsNodeAccessGrant[] @relation("FmsNodeGrantRequestedBy")
+  fms_node_access_grants_approved FmsNodeAccessGrant[] @relation("FmsNodeGrantApprovedBy")
+  fms_access_requests FmsAccessRequest[] @relation("FmsRequesters")
+  fms_access_request_targets FmsAccessRequest[] @relation("FmsTargetUsers")
+  fms_access_request_decisions FmsAccessRequest[] @relation("FmsDecisionUsers")
+  fms_branch_append_requests_requested FmsBranchAppendRequest[] @relation("FmsBranchAppendRequesters")
+  fms_branch_append_requests_decided FmsBranchAppendRequest[] @relation("FmsBranchAppendDecisionUsers")
+  fms_branch_append_grants_requested FmsBranchAppendGrant[] @relation("FmsBranchAppendRequestedBy")
+  fms_branch_append_grants_approved FmsBranchAppendGrant[] @relation("FmsBranchAppendApprovedBy")
+  fms_audit_events FmsAuditLog[]
+  fms_created_distributions FmsDistribution[] @relation("FmsCreatedDistributions")
+  fms_distribution_recipient_targets FmsDistributionRecipient[] @relation("FmsDistributionTargetUsers")
+  fms_distribution_recipient_assigned FmsDistributionRecipient[] @relation("FmsDistributionAssignedBy")
+  dms_note_access_grants NoteAccessGrant[] @relation("DmsNoteGrantedUsers")
+  dms_note_access_grants_issued NoteAccessGrant[] @relation("DmsNoteGrantedByUsers")
+  dms_note_access_grants_revoked NoteAccessGrant[] @relation("DmsNoteRevokedByUsers")
+}
+
+model LoginOtpChallenge {
+  id            String   @id @db.Uuid
+  user_id       Int
+  channel       String
+  destination   String
+  code_hash     String
+  expires_at    DateTime
+  consumed_at   DateTime?
+  created_at    DateTime @default(now())
+  last_sent_at  DateTime @default(now())
+  attempt_count Int      @default(0)
+  max_attempts  Int      @default(5)
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at])
+  @@index([expires_at])
+}
+
+model Session {
+  id                              String   @id @db.Uuid
+  user_id                         Int
+  last_activity                   DateTime
+  expires_at                      DateTime
+  created_at                      DateTime @default(now())
+  auth_methods                    Json?
+  assurance_level                 String   @default("password")
+  step_up_eligible                Boolean  @default(true)
+  multiple_failed_attempts_detected Boolean @default(false)
+
+  user                            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([expires_at])
+}
+
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique // INITIATOR, RECOMMENDER, APPROVER, CONTROLLER, ADMIN, SUPER_ADMIN, AUDITOR
+  users User[]
+}
+
+model Tenant {
+  id                    Int      @id @default(autoincrement())
+  tenant_name           String
+  tenant_code           String   @unique
+  deployment_host       String?  @unique
+  deployment_mode       String   @default("SHARED")
+  support_base_url      String?
+  support_access_mode   String   @default("REMOTE_API")
+  support_login_username String?
+  support_contact_name  String?
+  support_contact_email String?
+  support_contact_phone String?
+  support_api_key_ciphertext String?
+  support_last_checked_at DateTime?
+  support_last_success_at DateTime?
+  support_last_status   String?
+  support_last_error    String?  @db.Text
+  license_plan          String?
+  license_valid_until   DateTime?
+  brand_display_name    String?
+  brand_short_code      String?
+  brand_logo_path       String?
+  brand_watermark_text  String?
+  brand_subtitle        String?
+  email_from_name       String?
+  email_from_address    String?
+  email_reply_to        String?
+  credential_delivery_enabled Boolean @default(false)
+  otp_login_enabled     Boolean  @default(false)
+  cross_branch_append_enabled Boolean @default(false)
+  backup_policy_enabled Boolean  @default(true)
+  backup_frequency      String   @default("DAILY")
+  backup_retention_days Int      @default(30)
+  backup_window_hour    Int      @default(18)
+  backup_window_minute  Int      @default(0)
+  vendor_mirror_enabled Boolean  @default(true)
+  backup_last_completed_at DateTime?
+  backup_next_due_at     DateTime?
+  fms_record_type_master_json Json?
+  fms_record_desk_master_json Json?
+  fms_classification_master_json Json?
+  created_at            DateTime @default(now())
+
+  cities      City[]
+  branches    Branch[]
+  users       User[]
+  notes       Note[]
+  audit_logs  AuditLog[]
+  note_movements NoteMovement[]
+  notifications Notification[]
+  fms_nodes   FmsNode[]
+  fms_departments FmsDepartment[]
+  fms_department_branch_mappings FmsDepartmentBranch[]
+  fms_documents FmsDocument[]
+  fms_node_access_grants FmsNodeAccessGrant[]
+  fms_branch_append_requests FmsBranchAppendRequest[]
+  fms_branch_append_grants FmsBranchAppendGrant[]
+  fms_audit_logs FmsAuditLog[]
+  fms_distributions FmsDistribution[]
+
+  @@unique([tenant_name, tenant_code])
+}
+
+model City {
+  id          Int      @id @default(autoincrement())
+  tenant_id   Int
+  city_name   String
+  city_code   String
+  state_name  String?
+  state_code  String?
+  created_at  DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  branches    Branch[]
+
+  @@unique([tenant_id, city_name])
+  @@unique([tenant_id, city_code])
+  @@index([tenant_id, city_name])
+}
+
+model Branch {
+  id          Int      @id @default(autoincrement())
+  branch_name String
+  branch_code String
+  branch_address String?
+  tenant_id   Int
+  city_id     Int?
+  created_at  DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  city        City?    @relation(fields: [city_id], references: [id])
+  users       User[]
+  notes       Note[]
+  audit_logs  AuditLog[]
+  note_movements NoteMovement[]
+  branch_accesses UserBranchAccess[]
+  notifications Notification[]
+  fms_department_mappings FmsDepartmentBranch[]
+  fms_nodes   FmsNode[]
+  fms_documents FmsDocument[]
+  fms_access_grants FmsDocumentAccessGrant[] @relation("FmsGrantedBranches")
+  fms_node_access_grants FmsNodeAccessGrant[] @relation("FmsNodeGrantedBranches")
+  fms_access_request_branches FmsAccessRequest[] @relation("FmsRequesterBranches")
+  fms_access_request_target_branches FmsAccessRequest[] @relation("FmsTargetBranches")
+  fms_branch_append_requests_requested FmsBranchAppendRequest[] @relation("FmsBranchAppendRequesterBranches")
+  fms_branch_append_requests_source FmsBranchAppendRequest[] @relation("FmsBranchAppendSourceBranches")
+  fms_branch_append_grants_source FmsBranchAppendGrant[] @relation("FmsBranchAppendSourceBranches")
+  fms_branch_append_grants_target FmsBranchAppendGrant[] @relation("FmsBranchAppendTargetBranches")
+  fms_distribution_recipient_branches FmsDistributionRecipient[] @relation("FmsDistributionTargetBranches")
+
+  @@unique([tenant_id, branch_code])
+}
+
+model UserBranchAccess {
+  id         Int      @id @default(autoincrement())
+  user_id     Int
+  branch_id   Int
+  created_at  DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [id])
+  branch     Branch   @relation(fields: [branch_id], references: [id])
+
+  @@unique([user_id, branch_id])
+}
+
+model Department {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+  notes Note[]
+  fms_department_masters FmsDepartment[]
+}
+
+model Vertical {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+  notes Note[]
+}
+
+model Note {
+  id                Int           @id @default(autoincrement())
+  note_id           String        @unique // NT/NFIN/2026/0001
+  document_code     String?       @unique
+  document_group_key String
+  version_number    Int           @default(1)
+  previous_version_id Int?
+  is_latest_version Boolean       @default(true)
+  subject           String
+  note_type         String
+  workflow_type     String
+  classification    String        @default("INTERNAL")
+  initiator_id      Int
+  tenant_id         Int?
+  branch_id         Int?
+  department_id     Int
+  vertical_id       Int
+  status            String        @default("UPLOADED") // UPLOADED, REJECTED, RECOMMENDED, FINAL_APPROVED, SUPERSEDED, ARCHIVED
+  workflow_state    String        @default("DRAFT") // DRAFT, SUBMITTED, UNDER_REVIEW, RETURNED_WITH_REMARK, RESUBMITTED, APPROVED, REJECTED
+  queue_code        String        @default("DRAFTS") // DRAFTS, INCOMING, RETURNED_WITH_REMARKS, APPROVED_CLOSED_HISTORY
+  current_owner_user_id Int?
+  next_responsible_user_id Int?
+  last_action_by_user_id Int?
+  submitted_at      DateTime?
+  last_moved_at     DateTime      @default(now())
+  closed_at         DateTime?
+  approved_file_name String?
+  approved_file_path String?
+  approved_file_mime String?
+  approved_at       DateTime?
+  approved_by_name  String?
+  approved_by_role  String?
+  approval_note     String?       @db.Text
+  archived_at       DateTime?
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+
+  initiator         User          @relation("InitiatedNotes", fields: [initiator_id], references: [id])
+  tenant            Tenant?       @relation(fields: [tenant_id], references: [id])
+  branch            Branch?       @relation(fields: [branch_id], references: [id])
+  department        Department    @relation(fields: [department_id], references: [id])
+  vertical          Vertical      @relation(fields: [vertical_id], references: [id])
+  previous_version  Note?         @relation("NoteVersionChain", fields: [previous_version_id], references: [id])
+  next_versions     Note[]        @relation("NoteVersionChain")
+  current_owner     User?         @relation("CurrentOwnedNotes", fields: [current_owner_user_id], references: [id])
+  next_responsible  User?         @relation("NextResponsibleNotes", fields: [next_responsible_user_id], references: [id])
+  last_action_by    User?         @relation("LastActionNotes", fields: [last_action_by_user_id], references: [id])
+
+  workflow_steps    WorkflowStep[]
+  attachments       Attachment[]
+  comments          Comment[]
+  audit_logs        AuditLog[]
+  note_actions      NoteAction[]
+  note_movements    NoteMovement[]
+  rejection_highlights RejectionHighlight[]
+  fms_documents     FmsDocument[]
+  note_access_grants NoteAccessGrant[]
+
+  @@index([document_group_key, version_number])
+  @@index([document_group_key, is_latest_version])
+  @@index([status, is_latest_version])
+  @@index([workflow_state, is_latest_version])
+  @@index([queue_code, current_owner_user_id, is_latest_version])
+  @@index([current_owner_user_id, workflow_state])
+  @@index([next_responsible_user_id, workflow_state])
+  @@index([tenant_id, branch_id, status])
+}
+
+model NoteAccessGrant {
+  id                 Int      @id @default(autoincrement())
+  note_id            Int
+  granted_user_id    Int
+  granted_by_user_id Int
+  access_level       String   @default("VIEW")
+  is_active          Boolean  @default(true)
+  remarks            String?  @db.Text
+  created_at         DateTime @default(now())
+  revoked_at         DateTime?
+  revoked_by_user_id Int?
+  revoke_reason      String?  @db.Text
+
+  note               Note     @relation(fields: [note_id], references: [id])
+  granted_user       User     @relation("DmsNoteGrantedUsers", fields: [granted_user_id], references: [id])
+  granted_by         User     @relation("DmsNoteGrantedByUsers", fields: [granted_by_user_id], references: [id])
+  revoked_by         User?    @relation("DmsNoteRevokedByUsers", fields: [revoked_by_user_id], references: [id])
+
+  @@index([note_id, is_active])
+  @@index([granted_user_id, is_active])
+  @@index([granted_by_user_id])
+}
+
+model WorkflowStep {
+  id               Int           @id @default(autoincrement())
+  note_id          Int
+  sequence         Int
+  role_type        String        // RECOMMENDER, APPROVER, CONTROLLER
+  assigned_user_id Int?
+  status           String        @default("PENDING") // PENDING, COMPLETED, REJECTED, REFERRED_BACK
+  action_date      DateTime?
+
+  note             Note          @relation(fields: [note_id], references: [id])
+  assigned_user    User?         @relation(fields: [assigned_user_id], references: [id])
+}
+
+model Attachment {
+  id          Int      @id @default(autoincrement())
+  note_id     Int
+  file_name   String
+  file_path   String
+  file_type   String   // MAIN, SUPPORTING
+  uploaded_at DateTime @default(now())
+
+  note        Note     @relation(fields: [note_id], references: [id])
+  audit_logs  AuditLog[]
+
+  @@index([note_id, file_type])
+}
+
+model Comment {
+  id           Int      @id @default(autoincrement())
+  note_id      Int
+  user_id      Int
+  comment_text String   @db.Text
+  created_at   DateTime @default(now())
+
+  note         Note     @relation(fields: [note_id], references: [id])
+  user         User     @relation(fields: [user_id], references: [id])
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  note_id      Int
+  tenant_id    Int?
+  branch_id    Int?
+  version_number Int?
+  attachment_id Int?
+  file_type    String?
+  file_name    String?
+  action       String
+  performed_by String
+  role         String
+  remarks      String?  @db.Text
+  timestamp    DateTime @default(now())
+
+  note         Note     @relation(fields: [note_id], references: [id])
+  tenant       Tenant?  @relation(fields: [tenant_id], references: [id])
+  branch       Branch?  @relation(fields: [branch_id], references: [id])
+  attachment   Attachment? @relation(fields: [attachment_id], references: [id])
+
+  @@index([note_id, file_type])
+  @@index([attachment_id])
+  @@index([tenant_id, branch_id, timestamp])
+}
+
+model NoteAction {
+  id          Int      @id @default(autoincrement())
+  note_id     Int
+  user_id     Int
+  action_type String
+  comment     String?  @db.Text
+  timestamp   DateTime @default(now())
+
+  note        Note     @relation(fields: [note_id], references: [id])
+  user        User     @relation(fields: [user_id], references: [id])
+}
+
+model NoteMovement {
+  id            Int      @id @default(autoincrement())
+  note_id        Int
+  tenant_id      Int?
+  branch_id      Int?
+  from_state     String?
+  to_state       String
+  from_queue     String?
+  to_queue       String?
+  from_user_id   Int?
+  to_user_id     Int?
+  acted_by_user_id Int
+  action_type    String
+  remark_text    String?  @db.Text
+  created_at     DateTime @default(now())
+
+  note           Note     @relation(fields: [note_id], references: [id], onDelete: Cascade)
+  tenant         Tenant?  @relation(fields: [tenant_id], references: [id])
+  branch         Branch?  @relation(fields: [branch_id], references: [id])
+  from_user      User?    @relation("MovementFromUser", fields: [from_user_id], references: [id])
+  to_user        User?    @relation("MovementToUser", fields: [to_user_id], references: [id])
+  acted_by       User     @relation("MovementActor", fields: [acted_by_user_id], references: [id])
+
+  @@index([note_id, created_at])
+  @@index([acted_by_user_id, created_at])
+  @@index([from_user_id, created_at])
+  @@index([to_user_id, created_at])
+  @@index([tenant_id, branch_id, created_at])
+}
+
+model RejectionHighlight {
+  id                 Int      @id @default(autoincrement())
+  note_id            Int
+  document_group_key String
+  version_number     Int
+  page_number        Int
+  x                  Float
+  y                  Float
+  width              Float
+  height             Float
+  created_by_user_id Int
+  created_at         DateTime @default(now())
+
+  note               Note     @relation(fields: [note_id], references: [id])
+  created_by_user    User     @relation(fields: [created_by_user_id], references: [id])
+
+  @@index([note_id, page_number])
+  @@index([document_group_key, version_number])
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  tenant_id   Int?
+  branch_id   Int?
+  title       String
+  message     String   @db.Text
+  category    String   @default("GENERAL")
+  entity_type String?
+  entity_id   Int?
+  is_read     Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  user        User     @relation(fields: [user_id], references: [id])
+  tenant      Tenant?  @relation(fields: [tenant_id], references: [id])
+  branch      Branch?  @relation(fields: [branch_id], references: [id])
+
+  @@index([user_id, is_read, created_at])
+  @@index([tenant_id, branch_id, created_at])
+}
+
+model FmsNode {
+  id            Int        @id @default(autoincrement())
+  tenant_id     Int
+  branch_id     Int?
+  department_master_id Int?
+  parent_id     Int?
+  name          String
+  code          String
+  node_type     String
+  path_key      String     @unique
+  is_active     Boolean    @default(true)
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+
+  tenant        Tenant     @relation(fields: [tenant_id], references: [id])
+  branch        Branch?    @relation(fields: [branch_id], references: [id])
+  department_master FmsDepartment? @relation(fields: [department_master_id], references: [id])
+  parent        FmsNode?   @relation("FmsNodeTree", fields: [parent_id], references: [id])
+  children      FmsNode[]  @relation("FmsNodeTree")
+  documents     FmsDocument[]
+  access_grants FmsNodeAccessGrant[]
+  access_requests FmsAccessRequest[]
+  audit_logs    FmsAuditLog[]
+
+  @@unique([tenant_id, code, parent_id])
+  @@index([tenant_id, node_type, is_active])
+  @@index([branch_id])
+  @@index([department_master_id])
+}
+
+model FmsDocument {
+  id                 Int        @id @default(autoincrement())
+  tenant_id          Int
+  owner_node_id      Int
+  department_master_id Int?
+  branch_id          Int?
+  source_note_id     Int?
+  version_group_key  String
+  version_number     Int        @default(1)
+  previous_version_id Int?
+  is_latest_version  Boolean    @default(true)
+  classification     String
+  document_type      String
+  document_category  String?
+  title              String
+  customer_name      String?
+  customer_reference String
+  cif_reference      String?
+  account_reference  String?
+  identity_reference String?
+  id_proof_number    String?
+  document_reference String?
+  file_name          String
+  stored_path        String
+  mime_type          String
+  file_extension     String
+  file_size          Int
+  file_hash          String
+  file_kind          String
+  uploaded_by_user_id Int
+  published_by_user_id Int?
+  tags_json          Json?
+  custom_index_json  Json?
+  metadata_json      Json
+  search_text        String?
+  status             String     @default("ACTIVE")
+  created_at         DateTime   @default(now())
+  published_at       DateTime?
+  updated_at         DateTime   @updatedAt
+
+  tenant             Tenant     @relation(fields: [tenant_id], references: [id])
+  owner_node         FmsNode    @relation(fields: [owner_node_id], references: [id])
+  department_master  FmsDepartment? @relation(fields: [department_master_id], references: [id])
+  branch             Branch?    @relation(fields: [branch_id], references: [id])
+  source_note        Note?      @relation(fields: [source_note_id], references: [id])
+  previous_version   FmsDocument? @relation("FmsDocumentVersionChain", fields: [previous_version_id], references: [id])
+  next_versions      FmsDocument[] @relation("FmsDocumentVersionChain")
+  uploaded_by        User       @relation("FmsUploadedDocuments", fields: [uploaded_by_user_id], references: [id])
+  published_by       User?      @relation("FmsPublishedDocuments", fields: [published_by_user_id], references: [id])
+  access_grants      FmsDocumentAccessGrant[]
+  access_requests    FmsAccessRequest[]
+  audit_logs         FmsAuditLog[]
+  distributions      FmsDistribution[]
+
+  @@index([tenant_id, owner_node_id, status])
+  @@index([tenant_id, owner_node_id, is_latest_version])
+  @@index([tenant_id, department_master_id, status])
+  @@index([tenant_id, branch_id, status])
+  @@index([tenant_id, document_type, created_at])
+  @@index([tenant_id, document_category, created_at])
+  @@index([tenant_id, classification, created_at])
+  @@index([tenant_id, title])
+  @@index([tenant_id, file_name])
+  @@index([tenant_id, customer_name])
+  @@index([tenant_id, cif_reference])
+  @@index([tenant_id, identity_reference])
+  @@index([tenant_id, id_proof_number])
+  @@index([tenant_id, document_reference])
+  @@index([tenant_id, search_text])
+  @@index([version_group_key, version_number])
+  @@index([version_group_key, is_latest_version])
+  @@index([customer_reference])
+  @@index([account_reference])
+  @@index([uploaded_by_user_id, created_at])
+}
+
+model FmsNodeAccessGrant {
+  id                   Int      @id @default(autoincrement())
+  tenant_id            Int
+  node_id              Int
+  grant_type           String
+  user_id              Int?
+  branch_id            Int?
+  department_master_id Int?
+  access_level         String   @default("VIEW")
+  include_descendants  Boolean  @default(true)
+  requested_by_user_id Int?
+  approved_by_user_id  Int?
+  expires_at           DateTime?
+  revoked_at           DateTime?
+  revoke_reason        String?  @db.Text
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  tenant               Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  node                 FmsNode  @relation(fields: [node_id], references: [id], onDelete: Cascade)
+  user                 User?    @relation("FmsNodeGrantedUsers", fields: [user_id], references: [id])
+  branch               Branch?  @relation("FmsNodeGrantedBranches", fields: [branch_id], references: [id])
+  department_master    FmsDepartment? @relation(fields: [department_master_id], references: [id])
+  requested_by         User?    @relation("FmsNodeGrantRequestedBy", fields: [requested_by_user_id], references: [id])
+  approved_by          User?    @relation("FmsNodeGrantApprovedBy", fields: [approved_by_user_id], references: [id])
+
+  @@index([tenant_id, node_id, revoked_at])
+  @@index([tenant_id, user_id, revoked_at])
+  @@index([tenant_id, branch_id, revoked_at])
+  @@index([tenant_id, department_master_id, revoked_at])
+}
+
+model FmsDepartment {
+  id                 Int        @id @default(autoincrement())
+  tenant_id          Int
+  parent_id          Int?
+  legacy_department_id Int?
+  name               String
+  code               String
+  department_type    String     @default("DEPARTMENT")
+  hierarchy_level    Int        @default(0)
+  path_key           String
+  is_active          Boolean    @default(true)
+  created_at         DateTime   @default(now())
+  updated_at         DateTime   @updatedAt
+
+  tenant             Tenant     @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  parent             FmsDepartment? @relation("FmsDepartmentTree", fields: [parent_id], references: [id])
+  children           FmsDepartment[] @relation("FmsDepartmentTree")
+  legacy_department  Department? @relation(fields: [legacy_department_id], references: [id])
+  branch_mappings    FmsDepartmentBranch[]
+  nodes              FmsNode[]
+  documents          FmsDocument[]
+  node_access_grants FmsNodeAccessGrant[]
+  distribution_recipients FmsDistributionRecipient[] @relation("FmsDistributionTargetDepartments")
+
+  @@unique([tenant_id, path_key])
+  @@unique([tenant_id, code, parent_id])
+  @@index([tenant_id, parent_id, is_active])
+  @@index([legacy_department_id])
+}
+
+model FmsDepartmentBranch {
+  id                 Int        @id @default(autoincrement())
+  tenant_id          Int
+  department_master_id Int
+  branch_id          Int
+  created_at         DateTime   @default(now())
+
+  tenant             Tenant     @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  department_master  FmsDepartment @relation(fields: [department_master_id], references: [id], onDelete: Cascade)
+  branch             Branch     @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+
+  @@unique([department_master_id, branch_id])
+  @@index([tenant_id, branch_id])
+}
+
+model FmsDocumentAccessGrant {
+  id                  Int        @id @default(autoincrement())
+  document_id         Int
+  grant_type          String
+  user_id             Int?
+  branch_id           Int?
+  requested_by_user_id Int?
+  approved_by_user_id Int?
+  expires_at          DateTime?
+  revoked_at          DateTime?
+  revoke_reason       String?    @db.Text
+  created_at          DateTime   @default(now())
+  updated_at          DateTime   @updatedAt
+
+  document            FmsDocument @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  user                User?       @relation("FmsGrantedUsers", fields: [user_id], references: [id])
+  branch              Branch?     @relation("FmsGrantedBranches", fields: [branch_id], references: [id])
+
+  @@index([document_id, grant_type, revoked_at])
+  @@index([user_id, revoked_at])
+  @@index([branch_id, revoked_at])
+}
+
+model FmsDistribution {
+  id                    Int       @id @default(autoincrement())
+  tenant_id             Int
+  document_id           Int
+  parent_distribution_id Int?
+  created_by_user_id    Int
+  title                 String
+  instruction_type      String    @default("INFORMATION")
+  access_level          String    @default("VIEW")
+  message               String?   @db.Text
+  allow_redistribution  Boolean   @default(false)
+  due_at                DateTime?
+  status                String    @default("ACTIVE")
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  tenant                Tenant    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  document              FmsDocument @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  parent_distribution   FmsDistribution? @relation("FmsDistributionChain", fields: [parent_distribution_id], references: [id], onDelete: SetNull)
+  child_distributions   FmsDistribution[] @relation("FmsDistributionChain")
+  created_by            User      @relation("FmsCreatedDistributions", fields: [created_by_user_id], references: [id], onDelete: Cascade)
+  recipients            FmsDistributionRecipient[]
+
+  @@index([tenant_id, status, created_at])
+  @@index([document_id, status, created_at])
+  @@index([created_by_user_id, created_at])
+  @@index([parent_distribution_id])
+}
+
+model FmsDistributionRecipient {
+  id                         Int       @id @default(autoincrement())
+  distribution_id            Int
+  target_type                String
+  target_user_id             Int?
+  target_branch_id           Int?
+  target_department_master_id Int?
+  assigned_by_user_id        Int?
+  status                     String    @default("PENDING")
+  viewed_at                  DateTime?
+  acknowledged_at            DateTime?
+  completed_at               DateTime?
+  forwarded_at               DateTime?
+  last_action_note           String?   @db.Text
+  can_forward                Boolean   @default(false)
+  created_at                 DateTime  @default(now())
+  updated_at                 DateTime  @updatedAt
+
+  distribution               FmsDistribution @relation(fields: [distribution_id], references: [id], onDelete: Cascade)
+  target_user                User?     @relation("FmsDistributionTargetUsers", fields: [target_user_id], references: [id])
+  target_branch              Branch?   @relation("FmsDistributionTargetBranches", fields: [target_branch_id], references: [id])
+  target_department_master   FmsDepartment? @relation("FmsDistributionTargetDepartments", fields: [target_department_master_id], references: [id])
+  assigned_by                User?     @relation("FmsDistributionAssignedBy", fields: [assigned_by_user_id], references: [id])
+
+  @@index([distribution_id, status, created_at])
+  @@index([target_user_id, status, created_at])
+  @@index([target_branch_id, status, created_at])
+  @@index([target_department_master_id, status, created_at])
+}
+
+model FmsAccessRequest {
+  id                  Int        @id @default(autoincrement())
+  document_id         Int
+  requester_user_id   Int
+  requester_branch_id Int?
+  owner_node_id       Int
+  target_type         String
+  target_user_id      Int?
+  target_branch_id    Int?
+  reason              String     @db.Text
+  status              String     @default("PENDING")
+  decided_by_user_id  Int?
+  decision_note       String?    @db.Text
+  expires_at          DateTime?
+  decided_at          DateTime?
+  created_at          DateTime   @default(now())
+  updated_at          DateTime   @updatedAt
+
+  document            FmsDocument @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  requester           User        @relation("FmsRequesters", fields: [requester_user_id], references: [id])
+  requester_branch    Branch?     @relation("FmsRequesterBranches", fields: [requester_branch_id], references: [id])
+  owner_node          FmsNode     @relation(fields: [owner_node_id], references: [id])
+  target_user         User?       @relation("FmsTargetUsers", fields: [target_user_id], references: [id])
+  target_branch       Branch?     @relation("FmsTargetBranches", fields: [target_branch_id], references: [id])
+  decided_by          User?       @relation("FmsDecisionUsers", fields: [decided_by_user_id], references: [id])
+  audit_logs          FmsAuditLog[]
+
+  @@index([document_id, status, created_at])
+  @@index([owner_node_id, status, created_at])
+  @@index([requester_user_id, created_at])
+}
+
+model FmsAuditLog {
+  id               Int        @id @default(autoincrement())
+  tenant_id        Int?
+  owner_node_id    Int?
+  document_id      Int?
+  request_id       Int?
+  actor_user_id    Int?
+  action           String
+  remarks          String?    @db.Text
+  metadata_json    Json?
+  created_at       DateTime   @default(now())
+
+  tenant           Tenant?    @relation(fields: [tenant_id], references: [id])
+  owner_node       FmsNode?   @relation(fields: [owner_node_id], references: [id])
+  document         FmsDocument? @relation(fields: [document_id], references: [id])
+  request          FmsAccessRequest? @relation(fields: [request_id], references: [id])
+  actor            User?      @relation(fields: [actor_user_id], references: [id])
+
+  @@index([tenant_id, created_at])
+  @@index([document_id, created_at])
+  @@index([request_id, created_at])
+  @@index([owner_node_id, created_at])
+}
+
+model FmsBranchAppendRequest {
+  id                  Int      @id @default(autoincrement())
+  tenant_id           Int
+  requester_user_id   Int
+  requester_branch_id Int
+  source_branch_id    Int
+  requested_access_level String @default("VIEW")
+  reason              String   @db.Text
+  status              String   @default("PENDING")
+  decided_by_user_id  Int?
+  decision_note       String?  @db.Text
+  expires_at          DateTime?
+  decided_at          DateTime?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  tenant              Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  requester           User     @relation("FmsBranchAppendRequesters", fields: [requester_user_id], references: [id], onDelete: Cascade)
+  requester_branch    Branch   @relation("FmsBranchAppendRequesterBranches", fields: [requester_branch_id], references: [id], onDelete: Cascade)
+  source_branch       Branch   @relation("FmsBranchAppendSourceBranches", fields: [source_branch_id], references: [id], onDelete: Cascade)
+  decided_by          User?    @relation("FmsBranchAppendDecisionUsers", fields: [decided_by_user_id], references: [id])
+  grants              FmsBranchAppendGrant[]
+
+  @@index([tenant_id, status, created_at])
+  @@index([requester_branch_id, status, created_at])
+  @@index([source_branch_id, status, created_at])
+}
+
+model FmsBranchAppendGrant {
+  id                  Int      @id @default(autoincrement())
+  tenant_id           Int
+  source_branch_id    Int
+  target_branch_id    Int
+  access_level        String   @default("VIEW")
+  reason              String?  @db.Text
+  request_id          Int?
+  requested_by_user_id Int?
+  approved_by_user_id Int?
+  expires_at          DateTime?
+  revoked_at          DateTime?
+  revoke_reason       String?  @db.Text
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  tenant              Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  source_branch       Branch   @relation("FmsBranchAppendSourceBranches", fields: [source_branch_id], references: [id], onDelete: Cascade)
+  target_branch       Branch   @relation("FmsBranchAppendTargetBranches", fields: [target_branch_id], references: [id], onDelete: Cascade)
+  request             FmsBranchAppendRequest? @relation(fields: [request_id], references: [id], onDelete: SetNull)
+  requested_by        User?    @relation("FmsBranchAppendRequestedBy", fields: [requested_by_user_id], references: [id])
+  approved_by         User?    @relation("FmsBranchAppendApprovedBy", fields: [approved_by_user_id], references: [id])
+
+  @@index([tenant_id, target_branch_id, revoked_at])
+  @@index([tenant_id, source_branch_id, revoked_at])
+  @@index([request_id])
+}

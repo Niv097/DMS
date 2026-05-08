@@ -1,0 +1,47 @@
+      <div class="page-header"><h1>Help &amp; User Guide</h1><p>DMS Platform — Document Management System System</p></div>
+
+      <div class="card" id="workflow">
+        <div class="card-header blue">🔄 How the Workflow Works</div>
+        <div class="card-body">
+          <ol style="font-size:13px;line-height:2;padding-left:20px;color:var(--gray-700)">
+            <li><strong>Create Note</strong> — Initiator creates a note with subject, type, and uploads the main PDF.</li>
+            <li><strong>Select Recommenders</strong> — Add one or more recommenders (Stage 1, 2, 3…). They review sequentially.</li>
+            <li><strong>Select Approver</strong> — Add the final approving authority (DGM, AGM, etc.).</li>
+            <li><strong>Submit</strong> — Note goes to Stage 1 Recommender for check.</li>
+            <li><strong>Recommender Review</strong> — At each stage: if changes needed → returned to uploader. If OK → forwarded to next stage.</li>
+            <li><strong>Final Approval</strong> — After all recommenders clear, goes to Approver. Approver can approve or return.</li>
+            <li><strong>Note Approved</strong> — Status changes to Approved. All parties notified by email.</li>
+          </ol>
+          <div style="margin-top:16px;padding:12px 16px;background:var(--blue-pale);border-left:3px solid var(--blue-primary);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:13px;color:var(--gray-700)">
+            <strong>Note:</strong> If a note is returned from Stage 3, the uploader can resubmit after making changes — they can choose to re-enter at Stage 1, 2, or 3.
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="notes">
+        <div class="card-header blue">📄 Note Types</div>
+        <div class="card-body">
+          <table>
+            <thead><tr><th>Type</th><th>Description</th><th>Requires Approval?</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge badge-gray">Non-Financial</span></td><td>Operational, administrative or policy notes with no financial implication</td><td>Yes — full workflow</td></tr>
+              <tr><td><span class="badge badge-amber">Financial</span></td><td>Notes involving financial decisions, sanctions, or monetary approvals</td><td>Yes — full workflow</td></tr>
+              <tr><td><span class="badge badge-blue">Note for Information</span></td><td>Awareness-only notes. No recommendation or approval chain required.</td><td>No — information only</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" id="faq">
+        <div class="card-header blue">❓ FAQ</div>
+        <div class="card-body">
+          <div style="font-size:13px;line-height:1.8">
+            <p style="margin-bottom:12px"><strong>Q: Can I add multiple recommenders?</strong><br>Yes. There is no limit on the number of recommenders. They will review the note sequentially.</p>
+            <p style="margin-bottom:12px"><strong>Q: What happens when a note is returned?</strong><br>You (the initiator) receive an email notification. You can view the comments, make changes, and resubmit.</p>
+            <p style="margin-bottom:12px"><strong>Q: Can I edit a note after submission?</strong><br>Only if the note has been returned to you. You cannot edit a note that is currently under review.</p>
+            <p style="margin-bottom:12px"><strong>Q: What file formats are supported?</strong><br>Main Note: PDF only. Annexures: PDF, JPG, PNG, XLSX, DOCX.</p>
+            <p><strong>Q: How do I track the status of my note?</strong><br>Go to Dashboard → All Notes. The Status column shows current state. Click any row to see the full Audit Log.</p>
+          </div>
+        </div>
+      </div>
+

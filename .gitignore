@@ -1,0 +1,22 @@
+# Operating system / editor
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+
+# Frontend runtime/build artifacts
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.vite/
+
+# Backend runtime/build artifacts
+Backend/node_modules/
+Backend/logs/
+Backend/run.out.log
+Backend/run.err.log
+Backend/backups/
+
+# Local tools/runtime caches
+tools/

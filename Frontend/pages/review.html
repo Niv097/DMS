@@ -1,0 +1,168 @@
+      <div class="breadcrumb">
+        <a href="#/">Home</a> ›
+        <a href="#/">All Notes</a> ›
+        <span>Review — SBSC-142</span>
+      </div>
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h1>Review Note</h1>
+          <p>Stage 1 — Recommender Action</p>
+        </div>
+        <span class="badge badge-amber" style="font-size:13px;padding:5px 14px">⏳ Pending Your Action</span>
+      </div>
+
+      <!-- ACTION BUTTONS (top) -->
+      <div style="display:flex;gap:10px;margin-bottom:20px;padding:14px 18px;background:var(--amber-light);border:1px solid #fcd34d;border-radius:var(--radius-lg)">
+        <span style="font-size:13px;color:var(--amber-dark);flex:1">⚠️ This note is awaiting your recommendation at Stage 1. Please review the note and take action.</span>
+        <button class="btn btn-danger" onclick="showReturnModal()">↩ Return to Uploader</button>
+        <button class="btn btn-success" onclick="recommend()">✅ Recommend &amp; Forward</button>
+      </div>
+
+      <div class="two-col">
+        <!-- LEFT -->
+        <div>
+          <!-- Note Meta -->
+          <div class="card">
+            <div class="card-header blue">ℹ️ Note Details</div>
+            <div class="card-body">
+              <div class="info-grid">
+                <span class="lbl">Note ID</span><span class="val mono">NT/NFIN/AHM/NW-1/.../SBSC-142</span>
+                <span class="lbl">Created By</span><span class="val mono">sbi.11759@sbi.co.in</span>
+                <span class="lbl">Created On</span><span class="val">25/02/2026 06:45:47 PM</span>
+                <span class="lbl">Branch Code</span><span class="val">11759</span>
+                <span class="lbl">Circle</span><span class="val">Ahmedabad</span>
+                <span class="lbl">Department</span><span class="val">Science City Road Branch</span>
+                <span class="lbl">Subject</span><span class="val" style="font-weight:600">Approval for Opening ZBSA CNA Account</span>
+                <span class="lbl">Note Type</span><span class="val"><span class="badge badge-gray">NON-FINANCIAL</span></span>
+                <span class="lbl">Flow Type</span><span class="val"><span class="badge badge-gray">NORMAL</span></span>
+                <span class="lbl">Status</span><span class="val"><span class="badge badge-amber">Under Review</span></span>
+                <span class="lbl">Your Role</span><span class="val"><span class="badge badge-blue">Recommender — Stage 1</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comment History -->
+          <div class="card">
+            <div class="card-header">💬 Comment History</div>
+            <div class="card-body">
+              <div class="comment-entry">
+                <div class="comment-meta">Rajesh Kumar Singh CM DVAS · 05/03/2026 5:21 PM</div>
+                <div class="comment-text">AMEND RECOMMENDER DETAIL</div>
+              </div>
+              <div class="comment-entry">
+                <div class="comment-meta">SBI Science City Road Branch · 27/02/2026 4:36 PM</div>
+                <div class="comment-text">Changes done</div>
+              </div>
+              <div class="comment-entry">
+                <div class="comment-meta">Pankaj Kumar Jalan AGM Deposit &amp; VAS · 05/03/2026 12:04 PM</div>
+                <div class="comment-text">Please add annexure VC for exempt category</div>
+              </div>
+              <div class="comment-entry">
+                <div class="comment-meta">Govind Prasad Sinha DGM (B&amp;O) Ahmedabad · 05/03/2026 3:21 PM</div>
+                <div class="comment-text">1) Whether CC/OD accounts are in our book?<br>2) Why</div>
+              </div>
+              <div class="comment-entry" style="border-left-color:var(--blue-primary)">
+                <div class="comment-meta">SBI Science City Road Branch · 05/03/2026 5:01 PM</div>
+                <div class="comment-text">In response to Govind Prasad Sinha DGM:<br>1) Whether CC/OD accounts are in our book? — No, CC.<br><a href="#" style="color:var(--blue-primary);font-size:12px">Read more...</a></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add Comment -->
+          <div class="card">
+            <div class="card-header blue">✍️ Add Comment</div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>Your Comment</label>
+                <textarea id="comment-text" placeholder="Type your comment, query, or instruction here..." style="height:80px"></textarea>
+              </div>
+              <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('comment-text').value=''">Clear</button>
+                <button class="btn btn-primary btn-sm">💬 Post Comment</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Attachments -->
+          <div class="card">
+            <div class="card-header">📎 Attachments</div>
+            <div class="card-body" style="padding:0">
+              <table>
+                <thead><tr><th>Name</th><th>Type</th><th>Date</th></tr></thead>
+                <tbody>
+                  <tr><td><a href="#">AASHI PLASTIC DGM APPROVAL.pdf</a></td><td><span class="badge badge-purple">Main</span></td><td>25/02/2026</td></tr>
+                  <tr><td><a href="#">AASHI LETTER ZOSA.pdf</a></td><td><span class="badge badge-gray">Annexure</span></td><td>25/02/2026</td></tr>
+                  <tr><td><a href="#">AASHI SANCTION LETTER.pdf</a></td><td><span class="badge badge-gray">Annexure</span></td><td>25/02/2026</td></tr>
+                  <tr><td><a href="#">AASHI SAMARTH SCHEME.pdf</a></td><td><span class="badge badge-gray">Annexure</span></td><td>25/02/2026</td></tr>
+                  <tr><td><a href="#">AASHI plastic gvt ltd 0001.pdf</a></td><td><span class="badge badge-gray">Annexure</span></td><td>05/03/2026</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Action Buttons (bottom) -->
+          <div class="action-row">
+            <a href="#/" class="btn btn-outline">← Back to Dashboard</a>
+            <button class="btn btn-danger" onclick="showReturnModal()">↩ Return to Uploader</button>
+            <button class="btn btn-success" onclick="recommend()">✅ Recommend &amp; Forward</button>
+          </div>
+        </div>
+
+        <!-- RIGHT: DOC PREVIEW -->
+        <div>
+          <div class="doc-panel">
+            <div class="card">
+              <div class="card-header">📄 Document Preview</div>
+              <div class="card-body">
+                <div class="doc-toolbar">
+                  <button class="btn btn-outline btn-sm">‹ Prev</button>
+                  <span style="font-size:12px;padding:0 8px">Page 1 / 3</span>
+                  <button class="btn btn-outline btn-sm">Next ›</button>
+                  <select style="margin-left:auto;font-size:11px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:var(--radius-sm)">
+                    <option>Main Attachment</option>
+                    <option>AASHI LETTER ZOSA</option>
+                    <option>AASHI SANCTION LETTER</option>
+                    <option>AASHI SAMARTH SCHEME</option>
+                  </select>
+                </div>
+                <div class="note-preview">
+                  <div class="note-to">DEPUTY GENERAL MANAGER (For Approval)</div>
+                  <div class="note-to" style="margin-top:2px">ASST GENERAL MANAGER (For Recommendation)</div>
+                  <div class="note-subject">AASHI PLASTIC PVT LTD (CNA ACCOUNT)<br>APPROVAL FOR OPENING OF CURRENT ACCOUNT</div>
+                  <p style="margin-bottom:10px">Aashi Plastic Pvt Ltd has requested the Branch for opening of current Account for government dividend payment.</p>
+                  <p style="margin-bottom:10px">As per bank's e-circular No. 1480/2020-21 Cir No. NBG/TBU-LTP/40/2020-21 Dtd. 18.03.2021 while opening / continuing of Current Account under exempted categories/Project specific current/escrow accounts where CC/OD exists, Branch is required to obtain approval from DGM &amp; Branch Head.</p>
+                  <p style="margin-bottom:10px">The revised declaration as per e-circular No. NBG/TBU-LTP/15/2023-24 SI No. 870/2023-24 dtd 15.12.2023 is obtained from the company. Hence, in view of above we seek approval for opening of the said current account.</p>
+                  <div style="margin-top:32px;text-align:right;font-size:12px">
+                    <div style="font-weight:600">Branch: Science City Road</div>
+                    <div style="color:var(--gray-500)">Date: 25/02/2026</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+  <!-- RETURN MODAL -->
+  <div id="return-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;display:flex;align-items:center;justify-content:center" onclick="closeReturnModal(event)">
+    <div style="background:var(--white);border-radius:var(--radius-lg);padding:24px;width:480px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)" onclick="event.stopPropagation()">
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:6px">↩ Return Note</h3>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px">Select who to return this note to and provide a reason.</p>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Return To <span class="req">*</span></label>
+        <select style="width:100%;padding:8px 12px;border:1px solid var(--gray-200);border-radius:var(--radius-md);font-family:var(--font);font-size:13px">
+          <option>Uploader (sbi.11759@sbi.co.in)</option>
+          <option>Uploader + Recommender 1</option>
+          <option>Uploader + Recommender 1 + Recommender 2</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Reason / Instructions <span class="req">*</span></label>
+        <textarea placeholder="Enter detailed reason for returning..." style="width:100%;height:80px;padding:8px 12px;border:1px solid var(--gray-200);border-radius:var(--radius-md);font-family:var(--font);font-size:13px;resize:vertical"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="document.getElementById('return-modal').style.display='none'">Cancel</button>
+        <button class="btn btn-danger" onclick="submitReturn()">↩ Confirm Return</button>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,29 @@
+{
+  "document_group_key": "DMS-HeadOffice-HO/2026/2026/0010",
+  "note_id": "DOC/DMS/HO/2026/0010",
+  "document_code": "DOC/DMS/HO/2026/0010",
+  "version_number": 1,
+  "workflow_type": "STRICT",
+  "status": "FINAL_APPROVED",
+  "workflow_state": "APPROVED",
+  "queue_code": "APPROVED_CLOSED_HISTORY",
+  "current_owner_user_id": 1,
+  "next_responsible_user_id": null,
+  "subject": "AWS smoke workflow 2026-04-30",
+  "tenant_id": 1,
+  "branch_id": 1,
+  "stage": "FINAL_APPROVED",
+  "files": {
+    "main": {
+      "file_name": "demo-note.pdf",
+      "file_path": "uploads/workflows/DMS-HeadOffice-HO_2026_2026_0010/v1/attachments/main/main_note-1777542599753-239054602-demo-note.pdf"
+    },
+    "supporting": [],
+    "approved": {
+      "file_name": "demo-note-approved-v1.pdf",
+      "file_path": "uploads/workflows/DMS-HeadOffice-HO_2026_2026_0010/v1/approved/demo-note-approved-v1.pdf",
+      "mime": "application/pdf"
+    }
+  },
+  "updated_at": "2026-05-04T18:30:15.315Z"
+}

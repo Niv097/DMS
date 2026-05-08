@@ -1,0 +1,14 @@
+node_modules
+# Keep environment variables out of version control
+.env
+.env.*
+logs
+run.out.log
+run.err.log
+backups
+uploads/previews
+uploads/normalized
+uploads/*.tmp
+uploads/*.zip
+
+/generated/prisma

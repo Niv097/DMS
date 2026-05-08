@@ -1,0 +1,29 @@
+{
+  "document_group_key": "DOC/DMS/HO/2026/0003",
+  "note_id": "DOC/DMS/HO/2026/0003",
+  "document_code": "DOC/DMS/HO/2026/0003",
+  "version_number": 1,
+  "workflow_type": "STRICT",
+  "status": "FINAL_APPROVED",
+  "workflow_state": "APPROVED",
+  "queue_code": "APPROVED_CLOSED_HISTORY",
+  "current_owner_user_id": 1,
+  "next_responsible_user_id": null,
+  "subject": "FMS",
+  "tenant_id": 1,
+  "branch_id": 1,
+  "stage": "FINAL_APPROVED",
+  "files": {
+    "main": {
+      "file_name": "sbi.pdf",
+      "file_path": "uploads/workflows/DOC_DMS_HO_2026_0003/v1/attachments/main/sbi.pdf"
+    },
+    "supporting": [],
+    "approved": {
+      "file_name": "sbi-approved-v1.pdf",
+      "file_path": "uploads/workflows/DOC_DMS_HO_2026_0003/v1/approved/sbi-approved-v1.pdf",
+      "mime": "application/pdf"
+    }
+  },
+  "updated_at": "2026-05-04T19:02:35.021Z"
+}

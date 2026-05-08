@@ -1,0 +1,186 @@
+      <div class="breadcrumb">
+        <a href="#/">Home</a> › <span>Submit Note</span>
+      </div>
+      <div class="page-header">
+        <h1>Submit Note</h1>
+        <p>Create and route a new internal note for recommendation and approval</p>
+      </div>
+
+      <!-- STEPS -->
+      <div class="steps-bar">
+        <div class="step-item active"><span class="step-num">Step 1</span>Note Details</div>
+        <div class="step-item"><span class="step-num">Step 2</span>Recommenders</div>
+        <div class="step-item"><span class="step-num">Step 3</span>Approver</div>
+        <div class="step-item"><span class="step-num">Step 4</span>Attachments</div>
+        <div class="step-item"><span class="step-num">Step 5</span>Review &amp; Submit</div>
+      </div>
+
+      <!-- SECTION 1: VERTICAL -->
+      <div class="card">
+        <div class="card-header blue">📁 Vertical / Department / Circle</div>
+        <div class="card-body">
+          <div class="form-grid cols-3">
+            <div class="form-group">
+              <label>Type of User <span class="req">*</span></label>
+              <div class="radio-group">
+                <label><input type="radio" name="utype" value="ccgitc" checked> CC/GITC</label>
+                <label><input type="radio" name="utype" value="circles"> Circles</label>
+                <label><input type="radio" name="utype" value="foreign"> Foreign Offices</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Vertical <span class="req">*</span></label>
+              <select name="vertical" required>
+                <option value="">Select Vertical</option>
+                <option>Associates and Subsidiaries</option>
+                <option>Operations (RB&O)</option>
+                <option>Retail Banking</option>
+                <option>Corporate Banking</option>
+                <option>Treasury</option>
+                <option>Technology</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Originating Department <span class="req">*</span></label>
+              <select name="department" required>
+                <option value="">Select Department</option>
+                <option>Non Banking Subsidiaries</option>
+                <option>Science City Road Branch</option>
+                <option>Transaction Banking Hub</option>
+                <option>Vendor Management Department</option>
+                <option>Operations Department</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: SUBJECT & TYPE -->
+      <div class="card">
+        <div class="card-header blue">📌 Subject &amp; Note Type</div>
+        <div class="card-body">
+          <div class="form-grid" style="margin-bottom:16px">
+            <div class="form-group">
+              <label>Subject <span class="req">*</span></label>
+              <input type="text" name="subject" placeholder="Enter the Subject for Note" required>
+            </div>
+          </div>
+          <div class="form-grid cols-2">
+            <div class="form-group">
+              <label>Note Type <span class="req">*</span></label>
+              <div class="radio-group">
+                <label><input type="radio" name="note_type" value="non_financial" checked> Non-Financial</label>
+                <label><input type="radio" name="note_type" value="financial"> Financial</label>
+                <label><input type="radio" name="note_type" value="nfi" id="nfi_radio"> Note for Information</label>
+              </div>
+              <div id="nfi-hint" class="mt-4" style="display:none;font-size:12px;color:var(--blue-primary);padding:6px 10px;background:var(--blue-pale);border-radius:var(--radius-sm)">
+                ℹ️ Note for Information — no approval/recommendation chain required. Used for awareness only.
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Workflow Type</label>
+              <div class="radio-group">
+                <label><input type="radio" name="workflow_type" value="normal" checked> Normal</label>
+                <label><input type="radio" name="workflow_type" value="group"> Group</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: RECOMMENDERS -->
+      <div class="card" id="recommender-section">
+        <div class="card-header blue">👥 Recommenders <span style="font-weight:300;font-size:12px">(Multiple — Sequential Stages)</span></div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px;padding:8px 12px;background:var(--gray-50);border-radius:var(--radius-sm);border-left:3px solid var(--blue-primary)">
+            💡 You can add multiple recommenders. They will review the note one by one (Stage 1, 2, 3…). If any stage requires changes, the note is returned to the uploader.
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input type="text" id="rec-search" placeholder="Search by Name or Email ID" style="flex:1;padding:7px 12px;border:1px solid var(--gray-200);border-radius:var(--radius-md);font-family:var(--font);font-size:13px">
+            <button class="search-btn" onclick="searchRecommender()">Search</button>
+          </div>
+          <!-- Search results dropdown -->
+          <div id="rec-results" style="display:none;border:1px solid var(--gray-200);border-radius:var(--radius-md);margin-bottom:12px;overflow:hidden">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-400);padding:6px 12px;background:var(--gray-50)">Search Results</div>
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Action</th></tr></thead>
+              <tbody id="rec-results-body"></tbody>
+            </table>
+          </div>
+          <table id="rec-table">
+            <thead><tr><th>Seq</th><th>Name</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
+            <tbody id="rec-tbody">
+              <tr id="rec-empty"><td colspan="5" style="text-align:center;color:var(--gray-400);padding:16px">No recommenders added yet. Search and add above.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION 4: APPROVER -->
+      <div class="card" id="approver-section">
+        <div class="card-header blue">🔏 Approver <span style="font-weight:300;font-size:12px">(Single)</span></div>
+        <div class="card-body">
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input type="text" id="apr-search" placeholder="Search by Name or Email ID" style="flex:1;padding:7px 12px;border:1px solid var(--gray-200);border-radius:var(--radius-md);font-family:var(--font);font-size:13px">
+            <button class="search-btn" onclick="searchApprover()">Search</button>
+          </div>
+          <div id="apr-results" style="display:none;border:1px solid var(--gray-200);border-radius:var(--radius-md);margin-bottom:12px;overflow:hidden">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-400);padding:6px 12px;background:var(--gray-50)">Search Results</div>
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Action</th></tr></thead>
+              <tbody id="apr-results-body"></tbody>
+            </table>
+          </div>
+          <table>
+            <thead><tr><th>Seq</th><th>Name</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
+            <tbody id="apr-tbody">
+              <tr id="apr-empty"><td colspan="5" style="text-align:center;color:var(--gray-400);padding:16px">No approver added yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION 5: MAIN NOTE UPLOAD -->
+      <div class="card">
+        <div class="card-header blue">📎 Main Note <span style="font-weight:300;font-size:12px">(PDF)</span></div>
+        <div class="card-body">
+          <div class="upload-box" id="main-drop">
+            <div>📄 Drop your Main Note PDF here, or</div>
+            <label class="browse-btn" for="main-file-input">Browse File</label>
+            <input type="file" id="main-file-input" accept=".pdf" style="display:none" onchange="handleMainFile(this)">
+          </div>
+          <div style="margin-top:12px">
+            <table>
+              <thead><tr><th>File No</th><th>File Name</th><th>Size (MB)</th><th>Type</th><th>Actions</th></tr></thead>
+              <tbody id="main-files">
+                <tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:12px">No file uploaded</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 6: ANNEXURES -->
+      <div class="card">
+        <div class="card-header blue">🗂️ Annexures <span style="font-weight:300;font-size:12px">(Optional — Multiple)</span></div>
+        <div class="card-body">
+          <div class="upload-box" id="ann-drop">
+            <div>📎 Drop Annexures here, or</div>
+            <label class="browse-btn" for="ann-file-input">Browse File</label>
+            <input type="file" id="ann-file-input" accept=".pdf,.jpg,.png,.xlsx,.docx" multiple style="display:none" onchange="handleAnnexure(this)">
+          </div>
+          <div style="margin-top:12px">
+            <table>
+              <thead><tr><th>File No</th><th>File Name</th><th>Size (MB)</th><th>Type</th><th>Actions</th></tr></thead>
+              <tbody id="ann-files">
+                <tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:12px">No annexures uploaded</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <a href="#/" class="btn btn-outline">✕ Close</a>
+        <button class="btn btn-primary" onclick="submitNote()">📤 Submit Note</button>
+      </div>

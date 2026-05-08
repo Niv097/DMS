@@ -1255,7 +1255,13 @@ const FmsWorkspace = ({ section = 'register' }) => {
   const showInlineRecordDetail = Boolean(
     selectedDocumentDetail
     && (
-      showApprovalWorkbench
+      showRegisterWorkbench
+      || (
+        showInboxWorkbench
+        && !selectedDocumentIsCircular
+        && (shouldShowRequestForm || canSeeGovernancePanels)
+      )
+      || showApprovalWorkbench
       || (
         showInboxWorkbench
         && selectedDocumentIsCircular

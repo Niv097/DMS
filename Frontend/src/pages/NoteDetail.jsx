@@ -245,9 +245,8 @@ const NoteDetail = () => {
     }
   };
 
-  const openDownloadPrompt = ({ url, fallbackName, title }) => {
-    setDownloadEmployeeId(isDemoDownloadMode ? DEMO_DOWNLOAD_EMPLOYEE_ID : '');
-    setDownloadPrompt({ url, fallbackName, title });
+  const openDownloadPrompt = async ({ url, fallbackName }) => {
+    await handleDirectDownload(url, fallbackName);
   };
 
   const handleProtectedDownload = async () => {
@@ -2048,5 +2047,4 @@ const NoteDetail = () => {
 };
 
 export default NoteDetail;
-
 

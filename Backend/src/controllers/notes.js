@@ -2619,9 +2619,7 @@ export const streamAttachmentFile = async (req, res) => {
     if (disposition === 'attachment') {
       await assertNoteDownloadAccess(req.user, note);
     }
-    const downloadOfficer = disposition === 'attachment'
-      ? await validateDownloadEmployee(req, note)
-      : null;
+    const downloadOfficer = disposition === 'attachment' ? req.user : null;
     writeSecurityAudit(disposition === 'attachment' ? 'DMS_ATTACHMENT_DOWNLOADED' : 'DMS_ATTACHMENT_VIEWED', {
       user_id: req.user?.id,
       role: req.user?.role?.name || req.user?.role,
@@ -2693,9 +2691,7 @@ export const streamApprovedArtifactFile = async (req, res) => {
     if (disposition === 'attachment') {
       await assertNoteDownloadAccess(req.user, note);
     }
-    const downloadOfficer = disposition === 'attachment'
-      ? await validateDownloadEmployee(req, note)
-      : null;
+    const downloadOfficer = disposition === 'attachment' ? req.user : null;
     writeSecurityAudit(disposition === 'attachment' ? 'DMS_APPROVED_ARTIFACT_DOWNLOADED' : 'DMS_APPROVED_ARTIFACT_VIEWED', {
       user_id: req.user?.id,
       role: req.user?.role?.name || req.user?.role,
@@ -3357,9 +3353,7 @@ export const generateApprovedPDF = async (req, res) => {
     if (disposition === 'attachment') {
       await assertNoteDownloadAccess(req.user, note);
     }
-    const downloadOfficer = disposition === 'attachment'
-      ? await validateDownloadEmployee(req, note)
-      : null;
+    const downloadOfficer = disposition === 'attachment' ? req.user : null;
     if (disposition === 'attachment') {
       await createDirectAuditLog({
         note,

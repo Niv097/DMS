@@ -706,9 +706,10 @@ const Dashboard = ({ view, showQueueSelector = false }) => {
         }
         .dashboard-filter-form {
           display: grid;
-          grid-template-columns: minmax(420px, 2.15fr) repeat(3, minmax(190px, 1fr));
+          grid-template-columns: minmax(280px, 2.15fr) repeat(3, minmax(150px, 1fr));
           gap: 16px;
           align-items: end;
+          min-width: 0;
         }
         .dashboard-approved-layout {
           display: flex;
@@ -832,6 +833,9 @@ const Dashboard = ({ view, showQueueSelector = false }) => {
           border-color: #7fa4db;
           box-shadow: 0 0 0 3px rgba(42, 90, 167, 0.10);
         }
+        .dashboard-inline-filter {
+          min-width: 0;
+        }
         .dms-track-clear {
           position: absolute;
           right: 10px;
@@ -920,6 +924,14 @@ const Dashboard = ({ view, showQueueSelector = false }) => {
           padding: 0 2px;
           border-radius: 4px;
           font-weight: 700;
+        }
+        @media (max-width: 1280px) {
+          .dashboard-filter-form {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .dashboard-filter-search-row {
+            grid-column: 1 / -1;
+          }
         }
         @media (max-width: 960px) {
           .dashboard-hero-grid {
@@ -1269,5 +1281,4 @@ const Dashboard = ({ view, showQueueSelector = false }) => {
 };
 
 export default Dashboard;
-
 

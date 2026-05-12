@@ -1303,9 +1303,12 @@ const NoteDetail = () => {
             {note.status === 'FINAL_APPROVED' && isPdfFile(previewPath) && (
               <button
                 className="btn btn-success btn-sm"
-                onClick={() => openPdfInNewTab(`/notes/${note.id}/generate-pdf?disposition=inline`)}
+                onClick={() => openDownloadPrompt({
+                  url: `/notes/${note.id}/approved-file?disposition=attachment`,
+                  fallbackName: note.approved_file_name || `${note.note_id}-approved.pdf`
+                })}
               >
-                Open Approved PDF
+                Download Approved PDF
               </button>
             )}
             {note.status === 'FINAL_APPROVED' && note.approved_file_path && isImageFile(note.approved_file_path) && (

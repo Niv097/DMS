@@ -120,7 +120,8 @@ const buildFmsDownloadRemarks = ({ user, document, accessType }) => [
   `Date & Time: ${formatWorkflowTimestamp(new Date())}`
 ].filter(Boolean).join(' | ');
 const buildFmsControlledCopyContext = (user, document) => ({
-  title: 'APPROVED COPY',
+  title: 'APPROVED',
+  watermarkVariant: 'approved',
   officerName: user?.name || 'Bank User',
   employeeId: user?.employee_id || '',
   role: String(user?.role?.name || user?.role || '').trim(),

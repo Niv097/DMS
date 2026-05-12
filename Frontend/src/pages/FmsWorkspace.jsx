@@ -866,6 +866,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
     : (user?.fms_permissions || []);
   const hasPermission = (permission) => fmsPermissions.includes(permission);
   const isAdminOperator = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role) || hasPermission('FMS_SHARE') || hasPermission('FMS_REVOKE') || hasPermission('FMS_PUBLISH');
+  const isBankAdminRole = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
   const activeSection = section;
   const canSeeDmsPublishedRecords = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role) && activeSection === 'admin';
   const documentSourceMode = canSeeDmsPublishedRecords ? 'ALL' : 'MANUAL_ONLY';
@@ -1252,8 +1253,9 @@ const FmsWorkspace = ({ section = 'register' }) => {
   const canForwardSelectedDocument = selectedDocumentInboxItems.some((item) => item.can_forward);
   const canCreateDistribution = Boolean(canGrantRecordAccess || canForwardSelectedDocument);
   const showOperatorCircularCards = Boolean(canSeeGovernancePanels || canCreateDistribution);
-  const showInlineRecordDetail = Boolean(
+  const showAdminRecordDetail = Boolean(
     selectedDocumentDetail
+    && isBankAdminRole
     && (
       showRegisterWorkbench
       || (
@@ -1269,6 +1271,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
       )
     )
   );
+  const showInlineRecordDetail = Boolean(showAdminRecordDetail || (selectedDocumentDetail && shouldShowRequestForm));
   const mandatoryDistributionInboxItems = useMemo(
     () => distributionInbox.filter((item) => item.is_bank_wide_mandatory),
     [distributionInbox]
@@ -3232,7 +3235,9 @@ const FmsWorkspace = ({ section = 'register' }) => {
                       </div>
                       <div className="fms-action-list" style={{ minWidth: '220px', alignItems: 'flex-end' }}>
                         {showOperatorCircularCards ? <span className="fms-share-pill">{item.status}</span> : null}
-                        <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document?.id && openDocumentPage(item.document.id)}>View Circular</button>
+                        {isBankAdminRole ? (
+                          <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document?.id && openDocumentPage(item.document.id)}>View Circular</button>
+                        ) : null}
                         {(item.document?.can_download || item.document?.viewer_access_level === 'DOWNLOAD' || item.distribution?.access_level === 'DOWNLOAD') && (
                           <button
                             type="button"
@@ -3242,13 +3247,13 @@ const FmsWorkspace = ({ section = 'register' }) => {
                             Download
                           </button>
                         )}
-                        {item.status === 'PENDING' && (
+                        {isBankAdminRole && item.status === 'PENDING' && (
                           <button type="button" className="btn btn-outline btn-sm" onClick={() => handleDistributionRecipientAction(item.id, 'acknowledge')} disabled={saving}>Acknowledge</button>
                         )}
-                        {item.status !== 'COMPLETED' && item.distribution?.instruction_type === 'ACTION' && (
+                        {isBankAdminRole && item.status !== 'COMPLETED' && item.distribution?.instruction_type === 'ACTION' && (
                           <button type="button" className="btn btn-primary btn-sm" onClick={() => handleDistributionRecipientAction(item.id, 'complete')} disabled={saving}>Mark Action Done</button>
                         )}
-                        {item.can_forward && item.document?.id && (
+                        {isBankAdminRole && item.can_forward && item.document?.id && (
                           <button
                             type="button"
                             className="btn btn-outline btn-sm"
@@ -3946,8 +3951,10 @@ const FmsWorkspace = ({ section = 'register' }) => {
                           <td>{documentItem.department_master?.name || '-'}</td>
                           <td>{formatLibraryFolderLabel(documentItem.owner_node)}</td>
                           <td>
-                            <div className="fms-action-list">
-                              <button type="button" className="btn btn-outline btn-sm" onClick={() => openDocumentPage(documentItem.id)}>{canViewSensitiveFmsFiles ? 'Details' : 'Summary'}</button>
+                            <div className="fms-action-list fms-register-actions">
+                              {isBankAdminRole ? (
+                                <button type="button" className="btn btn-outline btn-sm" onClick={() => openDocumentPage(documentItem.id)}>{canViewSensitiveFmsFiles ? 'Details' : 'Summary'}</button>
+                              ) : null}
                               {documentItem.can_download ? (
                                 <button type="button" className="btn btn-outline btn-sm" onClick={() => downloadDocument(documentItem, 'attachment')}>Download</button>
                               ) : (
@@ -4011,8 +4018,10 @@ const FmsWorkspace = ({ section = 'register' }) => {
                       <div><span>Folder</span><strong>{formatLibraryFolderLabel(documentItem.owner_node)}</strong></div>
                       <div><span>Classification</span><strong>{documentItem.classification}</strong></div>
                     </div>
-                    <div className="fms-action-list">
-                      <button type="button" className="btn btn-outline btn-sm" onClick={() => openDocumentPage(documentItem.id)}>{canViewSensitiveFmsFiles ? 'Details' : 'Summary'}</button>
+                    <div className="fms-action-list fms-register-actions">
+                      {isBankAdminRole ? (
+                        <button type="button" className="btn btn-outline btn-sm" onClick={() => openDocumentPage(documentItem.id)}>{canViewSensitiveFmsFiles ? 'Details' : 'Summary'}</button>
+                      ) : null}
                       {documentItem.can_download ? (
                         <button type="button" className="btn btn-outline btn-sm" onClick={() => downloadDocument(documentItem, 'attachment')}>Download</button>
                       ) : (
@@ -4049,8 +4058,10 @@ const FmsWorkspace = ({ section = 'register' }) => {
 
           {showInlineRecordDetail && (
             <div ref={recordDetailRef} className="card fms-panel">
-              <div className="card-header blue">Record Detail</div>
+              <div className="card-header blue">{isBankAdminRole ? 'Record Detail' : 'Request Access'}</div>
               <div className="card-body">
+                {isBankAdminRole ? (
+                <>
                 <div className="fms-detail-grid">
                   <div className="fms-detail-card">
                     <span>Document</span>
@@ -4127,8 +4138,12 @@ const FmsWorkspace = ({ section = 'register' }) => {
                     </div>
                   </div>
                 )}
+                </>
+                ) : null}
 
                 <div className="fms-section-block">
+                  {isBankAdminRole ? (
+                  <>
                   <div className="fms-subtitle-row">
                     <div>
                       <strong>{buildFmsAuditScopeLabel(selectedDocumentDetail)} File Audit Log</strong>
@@ -4175,9 +4190,11 @@ const FmsWorkspace = ({ section = 'register' }) => {
                       </tbody>
                     </table>
                   </div>
+                  </>
+                  ) : null}
                 </div>
 
-                {selectedDocumentDetail.status === 'BACKUP_ONLY' && canReleaseBackup && (
+                {isBankAdminRole && selectedDocumentDetail.status === 'BACKUP_ONLY' && canReleaseBackup && (
                   <div className="fms-empty-box" style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
                     <div>
                       <strong>Backup-only custody</strong>
@@ -4189,7 +4206,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
                   </div>
                 )}
 
-                {canSeeGovernancePanels && !selectedDocumentIsCircular && (
+                {isBankAdminRole && canSeeGovernancePanels && !selectedDocumentIsCircular && (
                 <div className="fms-section-block">
                   <div className="fms-subtitle-row">
                     <div>
@@ -4330,7 +4347,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
                   </div>
                 )}
 
-                {(!selectedDocumentIsCircular && (canSeeGovernancePanels || shouldShowRequestForm)) && (
+                  {(!selectedDocumentIsCircular && ((isBankAdminRole && canSeeGovernancePanels) || shouldShowRequestForm)) && (
                 <div className="fms-form-pair">
                   {canSeeGovernancePanels && (
                     <div className="fms-inline-form">
@@ -5406,6 +5423,29 @@ const FmsWorkspace = ({ section = 'register' }) => {
           justify-content: flex-end;
           gap: 10px;
           padding-top: 2px;
+        }
+        .fms-register-actions {
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          gap: 8px;
+          min-width: 0;
+        }
+        .fms-records-table th:last-child,
+        .fms-records-table td:last-child {
+          position: sticky;
+          right: 0;
+          min-width: 138px;
+          width: 138px;
+        }
+        .fms-records-table th:last-child {
+          z-index: 3;
+          background: #404a5b;
+          box-shadow: -10px 0 14px rgba(10, 29, 53, 0.16);
+        }
+        .fms-records-table td:last-child {
+          z-index: 2;
+          background: #ffffff;
+          box-shadow: -10px 0 14px rgba(10, 29, 53, 0.08);
         }
         .fms-policy-strip {
           display: grid;

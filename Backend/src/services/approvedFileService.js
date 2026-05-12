@@ -709,6 +709,28 @@ const buildControlledWatermarkLines = (_note, downloadContext = {}) => [
   downloadContext.downloadedAt ? `Downloaded On ${downloadContext.downloadedAt}` : null
 ].filter(Boolean);
 
+const resolveControlledWatermarkPalette = (downloadContext = {}) => {
+  if (downloadContext.watermarkVariant === 'approved') {
+    return {
+      pdfColor: rgb(0.72, 0.19, 0.19),
+      pdfHeadlineOpacities: [0.11, 0.16, 0.11],
+      pdfDetailOpacities: [0.09, 0.13, 0.09],
+      imageHeadlineOpacities: [0.14, 0.2, 0.14],
+      imageDetailOpacities: [0.11, 0.16, 0.11],
+      imageRgb: '184, 46, 46'
+    };
+  }
+
+  return {
+    pdfColor: rgb(0.48, 0.55, 0.63),
+    pdfHeadlineOpacities: [0.055, 0.095, 0.055],
+    pdfDetailOpacities: [0.05, 0.09, 0.05],
+    imageHeadlineOpacities: [0.08, 0.12, 0.08],
+    imageDetailOpacities: [0.07, 0.1, 0.07],
+    imageRgb: '97, 111, 127'
+  };
+};
+
 const drawControlledPdfWatermark = (page, boldFont, regularFont, note, downloadContext) => {
   const { width, height } = page.getSize();
   const lines = buildControlledWatermarkLines(note, downloadContext);
@@ -716,15 +738,31 @@ const drawControlledPdfWatermark = (page, boldFont, regularFont, note, downloadC
     return;
   }
 
+  const palette = resolveControlledWatermarkPalette(downloadContext);
   const angle = degrees(-31);
   const diagonal = Math.sqrt((width ** 2) + (height ** 2));
   const headlineSize = Math.max(28, Math.min(54, diagonal * 0.05));
   const detailSize = Math.max(10, Math.min(18, headlineSize * 0.34));
   const headline = lines[0];
   const anchorPoints = [
-    { x: width * 0.28, y: height * 0.3, headlineOpacity: 0.055, detailOpacity: 0.05 },
-    { x: width * 0.52, y: height * 0.56, headlineOpacity: 0.095, detailOpacity: 0.09 },
-    { x: width * 0.76, y: height * 0.82, headlineOpacity: 0.055, detailOpacity: 0.05 }
+    {
+      x: width * 0.28,
+      y: height * 0.3,
+      headlineOpacity: palette.pdfHeadlineOpacities[0],
+      detailOpacity: palette.pdfDetailOpacities[0]
+    },
+    {
+      x: width * 0.52,
+      y: height * 0.56,
+      headlineOpacity: palette.pdfHeadlineOpacities[1],
+      detailOpacity: palette.pdfDetailOpacities[1]
+    },
+    {
+      x: width * 0.76,
+      y: height * 0.82,
+      headlineOpacity: palette.pdfHeadlineOpacities[2],
+      detailOpacity: palette.pdfDetailOpacities[2]
+    }
   ];
 
   for (const anchor of anchorPoints) {
@@ -734,7 +772,7 @@ const drawControlledPdfWatermark = (page, boldFont, regularFont, note, downloadC
       y: anchor.y,
       size: headlineSize,
       font: boldFont,
-      color: rgb(0.48, 0.55, 0.63),
+      color: palette.pdfColor,
       opacity: anchor.headlineOpacity,
       rotate: angle
     });
@@ -746,7 +784,7 @@ const drawControlledPdfWatermark = (page, boldFont, regularFont, note, downloadC
         y: anchor.y - ((index + 1) * (detailSize + 8)) - 8,
         size: detailSize,
         font: regularFont,
-        color: rgb(0.48, 0.55, 0.63),
+        color: palette.pdfColor,
         opacity: anchor.detailOpacity,
         rotate: angle
       });
@@ -761,10 +799,26 @@ const createControlledImageOverlay = (width, height, note, downloadContext) => {
   const diagonal = Math.sqrt((width ** 2) + (height ** 2));
   const headlineSize = Math.max(54, Math.min(104, Math.round(diagonal * 0.065)));
   const detailSize = Math.max(18, Math.round(headlineSize * 0.25));
+  const palette = resolveControlledWatermarkPalette(downloadContext);
   const groups = [
-    { x: width * 0.28, y: height * 0.34, headlineOpacity: 0.08, detailOpacity: 0.07 },
-    { x: width * 0.52, y: height * 0.58, headlineOpacity: 0.12, detailOpacity: 0.1 },
-    { x: width * 0.76, y: height * 0.82, headlineOpacity: 0.08, detailOpacity: 0.07 }
+    {
+      x: width * 0.28,
+      y: height * 0.34,
+      headlineOpacity: palette.imageHeadlineOpacities[0],
+      detailOpacity: palette.imageDetailOpacities[0]
+    },
+    {
+      x: width * 0.52,
+      y: height * 0.58,
+      headlineOpacity: palette.imageHeadlineOpacities[1],
+      detailOpacity: palette.imageDetailOpacities[1]
+    },
+    {
+      x: width * 0.76,
+      y: height * 0.82,
+      headlineOpacity: palette.imageHeadlineOpacities[2],
+      detailOpacity: palette.imageDetailOpacities[2]
+    }
   ];
 
   return Buffer.from(`
@@ -775,7 +829,7 @@ const createControlledImageOverlay = (width, height, note, downloadContext) => {
             x="0"
             y="0"
             text-anchor="middle"
-            fill="rgba(97, 111, 127, ${group.headlineOpacity})"
+            fill="rgba(${palette.imageRgb}, ${group.headlineOpacity})"
             font-size="${headlineSize}"
             font-family="Arial, Helvetica, sans-serif"
             font-weight="700"
@@ -785,7 +839,7 @@ const createControlledImageOverlay = (width, height, note, downloadContext) => {
               x="0"
               y="${(index + 1) * (detailSize + 16)}"
               text-anchor="middle"
-              fill="rgba(97, 111, 127, ${group.detailOpacity})"
+              fill="rgba(${palette.imageRgb}, ${group.detailOpacity})"
               font-size="${detailSize}"
               font-family="Arial, Helvetica, sans-serif"
               font-weight="500"

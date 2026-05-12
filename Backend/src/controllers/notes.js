@@ -3321,8 +3321,9 @@ export const downloadNoteAuditPdf = async (req, res) => {
 
     const pdfBytes = await pdfDoc.save();
     const fileName = `${note.note_id || `note-${note.id}`}-audit-report.pdf`.replace(/[^\w.-]+/g, '_');
+    const disposition = String(req.query.disposition || 'attachment').toLowerCase() === 'inline' ? 'inline' : 'attachment';
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+    res.setHeader('Content-Disposition', `${disposition}; filename=${fileName}`);
     res.send(Buffer.from(pdfBytes));
   } catch (error) {
     res.status(500).json({ error: error.message });

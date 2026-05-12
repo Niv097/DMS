@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import api from '../utils/api';
+import api, { resolvedBaseUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toPublicDocumentReference } from '../utils/documentReference';
 import UserSearchSelect from '../components/UserSearchSelect';
@@ -243,6 +243,16 @@ const NoteDetail = () => {
     } catch (error) {
       setPageMessage({ type: 'error', text: error.response?.data?.error || 'Download failed.' });
     }
+  };
+
+  const openPdfInNewTab = (url) => {
+    if (!url) return;
+    const normalizedUrl = /^https?:\/\//i.test(url)
+      ? url
+      : `${resolvedBaseUrl.replace(/\/$/, '')}/${String(url).replace(/^\/+/, '').replace(/^api\//, '')}`;
+    const separator = normalizedUrl.includes('?') ? '&' : '?';
+    const targetUrl = `${normalizedUrl}${separator}v=${Date.now()}`;
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
   const openDownloadPrompt = async ({ url, fallbackName }) => {
@@ -915,8 +925,8 @@ const NoteDetail = () => {
                         <button className="btn btn-outline btn-sm" onClick={() => handleDirectDownload(`/notes/${note.id}/audit/export/excel`, `${note.note_id}-audit-report.xls`)}>
                           Download Excel
                         </button>
-                        <button className="btn btn-outline btn-sm" onClick={() => handleDirectDownload(`/notes/${note.id}/audit/export/pdf`, `${note.note_id}-audit-report.pdf`)}>
-                          Download PDF
+                        <button className="btn btn-outline btn-sm" onClick={() => openPdfInNewTab(`/notes/${note.id}/generate-pdf?disposition=inline`)}>
+                          Open PDF
                         </button>
                       </>
                     )}
@@ -1044,17 +1054,27 @@ const NoteDetail = () => {
                     <div className="note-attachment-row note-attachment-row-main">
                       <span>{mainAttachment.file_name} <small>(MAIN)</small></span>
                       <div className="attachment-actions">
-                        <button
-                          type="button"
-                          className="attachment-action-btn"
-                          onClick={() => openDownloadPrompt({
-                            url: `/notes/${note.id}/attachments/${mainAttachment.id}?disposition=attachment`,
-                            fallbackName: mainAttachment.file_name,
-                            title: 'Main document'
-                          })}
-                        >
-                          Download
-                        </button>
+                        {isPdfFile(mainAttachment.file_name || '') ? (
+                          <button
+                            type="button"
+                            className="attachment-action-btn"
+                            onClick={() => openPdfInNewTab(`/notes/${note.id}/attachments/${mainAttachment.id}?disposition=inline`)}
+                          >
+                            Open PDF
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="attachment-action-btn"
+                            onClick={() => openDownloadPrompt({
+                              url: `/notes/${note.id}/attachments/${mainAttachment.id}?disposition=attachment`,
+                              fallbackName: mainAttachment.file_name,
+                              title: 'Main document'
+                            })}
+                          >
+                            Download
+                          </button>
+                        )}
                       </div>
                     </div>
                   ) : <div className="text-muted">No main document found.</div>}
@@ -1067,17 +1087,27 @@ const NoteDetail = () => {
                     <div key={attachment.id} className="note-attachment-row">
                       <span>{attachment.file_name} <small>(SUPPORTING)</small></span>
                       <div className="attachment-actions">
-                        <button
-                          type="button"
-                          className="attachment-action-btn"
-                          onClick={() => openDownloadPrompt({
-                            url: `/notes/${note.id}/attachments/${attachment.id}?disposition=attachment`,
-                            fallbackName: attachment.file_name,
-                            title: 'Supporting document'
-                          })}
-                        >
-                          Download
-                        </button>
+                        {isPdfFile(attachment.file_name || '') ? (
+                          <button
+                            type="button"
+                            className="attachment-action-btn"
+                            onClick={() => openPdfInNewTab(`/notes/${note.id}/attachments/${attachment.id}?disposition=inline`)}
+                          >
+                            Open PDF
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="attachment-action-btn"
+                            onClick={() => openDownloadPrompt({
+                              url: `/notes/${note.id}/attachments/${attachment.id}?disposition=attachment`,
+                              fallbackName: attachment.file_name,
+                              title: 'Supporting document'
+                            })}
+                          >
+                            Download
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1273,13 +1303,9 @@ const NoteDetail = () => {
             {note.status === 'FINAL_APPROVED' && isPdfFile(previewPath) && (
               <button
                 className="btn btn-success btn-sm"
-                onClick={() => openDownloadPrompt({
-                  url: `/notes/${note.id}/generate-pdf`,
-                  fallbackName: `${note.note_id}-approved.pdf`,
-                  title: 'Approved PDF'
-                })}
+                onClick={() => openPdfInNewTab(`/notes/${note.id}/generate-pdf?disposition=inline`)}
               >
-                Download Approved PDF
+                Open Approved PDF
               </button>
             )}
             {note.status === 'FINAL_APPROVED' && note.approved_file_path && isImageFile(note.approved_file_path) && (
@@ -2047,4 +2073,3 @@ const NoteDetail = () => {
 };
 
 export default NoteDetail;
-

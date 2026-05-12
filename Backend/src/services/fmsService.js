@@ -2059,8 +2059,26 @@ export const normalizeFmsPermissionsInput = (permissions = [], { ownedDepartment
     }
   }
 
+  const wantsUpload = deduped.has(FMS_PERMISSIONS.UPLOAD)
+    || deduped.has(FMS_PERMISSIONS.SHARE)
+    || deduped.has(FMS_PERMISSIONS.REVOKE)
+    || deduped.has(FMS_PERMISSIONS.PUBLISH);
+  const wantsDownload = wantsUpload || deduped.has(FMS_PERMISSIONS.DOWNLOAD_ALL);
+  const wantsView = wantsDownload || deduped.has(FMS_PERMISSIONS.VIEW) || deduped.has(FMS_PERMISSIONS.VIEW_ALL);
+
+  const normalizedPreset = [];
+  if (wantsView) {
+    normalizedPreset.push(FMS_PERMISSIONS.VIEW, FMS_PERMISSIONS.VIEW_ALL);
+  }
+  if (wantsDownload) {
+    normalizedPreset.push(FMS_PERMISSIONS.DOWNLOAD_ALL);
+  }
+  if (wantsUpload) {
+    normalizedPreset.push(FMS_PERMISSIONS.UPLOAD);
+  }
+
   return {
-    permissions: FMS_PERMISSION_ORDER.filter((permission) => deduped.has(permission)),
+    permissions: FMS_PERMISSION_ORDER.filter((permission) => normalizedPreset.includes(permission)),
     owned_department_id: Number(ownedDepartmentId || envelope.ownedDepartmentId || 0) || null
   };
 };

@@ -2,15 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../utils/api';
 import {
-  accessMatrixBadgeTone,
-  accessMatrixLabel,
-  availableFmsPermissions,
   expandFmsRoleProfile,
-  fmsRoleExamples,
   fmsRoleProfiles,
   getFmsRoleProfile,
-  inferFmsProfile,
-  permissionDisplayLabel
+  inferFmsProfile
 } from '../utils/fmsRoles';
 
 const getUserFmsStatus = (managedUser) => {
@@ -65,7 +60,7 @@ const createEditorStateFromUser = (selectedUser, draft = null) => {
   if (!selectedUser) return null;
   const inferredProfile = inferFmsProfile(selectedUser);
   const normalizedProfile = inferredProfile.key === 'CUSTOM'
-    ? 'RECORD_INTAKE'
+    ? 'VIEW_DOWNLOAD_UPLOAD'
     : (inferredProfile.key === 'GRANTED_VIEW' ? 'VIEW_ONLY' : inferredProfile.key);
 
   const baseEditor = {
@@ -180,11 +175,7 @@ const AdminFmsRoles = () => {
   const nextProfile = editor
     ? getFmsRoleProfile(editor.fms_profile || 'VIEW_ONLY')
     : null;
-  const roleUsesOwnedDepartment = ['RECORD_INTAKE', 'ACCESS_CONTROLLER', 'PUBLISHING_CONTROLLER'].includes(editor?.fms_profile || '');
-  const currentPermissions = editor?.current_fms_enabled ? (editor.current_fms_permissions || []) : [];
-  const nextPermissions = editor?.fms_enabled ? expandFmsRoleProfile(editor.fms_profile || 'VIEW_ONLY') : [];
-  const permissionsToAdd = availableFmsPermissions.filter((permission) => !currentPermissions.includes(permission) && nextPermissions.includes(permission));
-  const permissionsToRemove = availableFmsPermissions.filter((permission) => currentPermissions.includes(permission) && !nextPermissions.includes(permission));
+  const roleUsesOwnedDepartment = (editor?.fms_profile || '') === 'VIEW_DOWNLOAD_UPLOAD';
 
   const handleSave = async () => {
     if (!editor?.id) return;
@@ -282,7 +273,7 @@ const AdminFmsRoles = () => {
     () => fmsDepartments.find((item) => String(item.legacy_department?.id || '') === String(editor?.fms_owned_department_id || '')) || null,
     [editor?.fms_owned_department_id, fmsDepartments]
   );
-  const primaryRoleKeys = ['VIEW_ONLY', 'RECORD_INTAKE', 'LIBRARY_DOWNLOADER', 'ACCESS_CONTROLLER'];
+  const primaryRoleKeys = ['VIEW_ONLY', 'VIEW_DOWNLOAD', 'VIEW_DOWNLOAD_UPLOAD'];
   const displayedRoleProfiles = useMemo(() => {
     const baseProfiles = primaryRoleKeys
       .map((key) => fmsRoleProfiles.find((profile) => profile.key === key))
@@ -300,23 +291,6 @@ const AdminFmsRoles = () => {
         <div>
           <h1>FMS Role Desk</h1>
           <p>Search the user, choose the user, and assign the banking FMS role from one direct desk.</p>
-        </div>
-      </div>
-
-      <div style={{ ...panelStyle, padding: '16px 18px', marginBottom: '16px' }}>
-        <div style={{ color: '#173c6d', fontWeight: 800, fontSize: '18px', marginBottom: '6px' }}>Common Banking Mappings</div>
-        <div className="text-muted" style={{ fontSize: '13px', marginBottom: '12px' }}>
-          Use these examples when business users ask in bank language like uploader, recommender, or approver.
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
-          {fmsRoleExamples.map((item) => (
-            <div key={item.title} style={{ border: '1px solid #dbe4ef', borderRadius: '14px', background: '#ffffff', padding: '14px 15px' }}>
-              <div style={{ color: '#173c6d', fontWeight: 800, marginBottom: '5px' }}>{item.title}</div>
-              <div style={{ color: '#31527a', fontWeight: 700, fontSize: '13px', lineHeight: 1.5, marginBottom: '6px' }}>{item.mapping}</div>
-              <div style={{ color: '#5f748e', fontSize: '12px', lineHeight: 1.55, marginBottom: '6px' }}>{item.summary}</div>
-              <small className="text-muted text-sm">{item.note}</small>
-            </div>
-          ))}
         </div>
       </div>
 
@@ -538,7 +512,7 @@ const AdminFmsRoles = () => {
                 <div className="form-group">
                   <label>Selected Role</label>
                   <div style={{ minHeight: '42px', display: 'flex', alignItems: 'center', padding: '8px 12px', border: '1px solid #dbe4ef', borderRadius: '10px', background: '#f8fbff', color: '#173c6d', fontWeight: 700 }}>
-                    {nextProfile?.label || 'Shared Records Viewer'}
+                    {nextProfile?.label || 'View'}
                   </div>
                   <small className="text-muted text-sm">
                     {nextProfile?.description || fmsRoleProfiles[0].description}
@@ -563,13 +537,13 @@ const AdminFmsRoles = () => {
                   <label>Effective FMS Reach</label>
                   <div style={{ minHeight: '42px', display: 'flex', alignItems: 'center', padding: '8px 12px', border: '1px solid #dbe4ef', borderRadius: '10px', background: '#f8fbff', color: '#173c6d', fontWeight: 700 }}>
                     {roleUsesOwnedDepartment
-                      ? `${selectedOwnedFmsDepartment?.name || selectedUser.department || 'Department-owned desk'} intake + full released-library view`
-                      : (editor?.fms_profile === 'LIBRARY_DOWNLOADER'
-                        ? 'Full released FMS library view + controlled download'
-                        : 'Full released FMS library view across all departments')}
+                      ? `${selectedOwnedFmsDepartment?.name || selectedUser.department || 'Department-owned desk'} upload with bank-wide view + download`
+                      : (editor?.fms_profile === 'VIEW_DOWNLOAD'
+                        ? 'Full released FMS library view + download'
+                        : 'Full released FMS library view')}
                   </div>
                   <small className="text-muted text-sm">
-                    Viewer roles are bank-wide for released library records. Owned department is used only for upload/control roles.
+                    Owned department is used only for the upload role.
                   </small>
                 </div>
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
@@ -588,15 +562,12 @@ const AdminFmsRoles = () => {
                   </select>
                   <small className="text-muted text-sm">
                     {roleUsesOwnedDepartment
-                      ? 'Choose the owned desk only for upload/control roles like KYC, Loans, Circulars, Audit, or Manual.'
-                      : 'Viewer and viewer + downloader roles already work across all released departments, so owned desk is not used here.'}
+                      ? 'Choose the owned desk for the upload role.'
+                      : 'Owned desk is not used for view or view + download.'}
                   </small>
                 </div>
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label>Choose One Banking FMS Role</label>
-                  <div style={{ marginBottom: '10px', padding: '10px 12px', borderRadius: '10px', border: '1px solid #dbe4ef', background: '#ffffff', color: '#4c647f', fontSize: '12px', lineHeight: 1.6 }}>
-                    Bank order: <strong>Bank → Department → Sub-department → Branch</strong>. These presets decide what a user can do inside that scope. Download remains a controlled grant even for users who can already view records.
-                  </div>
+                  <label>Choose One FMS Role</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
                     {displayedRoleProfiles.map((profile) => {
                       const isActive = (editor.fms_profile || 'VIEW_ONLY') === profile.key;
@@ -607,7 +578,7 @@ const AdminFmsRoles = () => {
                           onClick={() => updateSelectedEditor((current) => ({
                             ...current,
                             fms_profile: profile.key,
-                            fms_owned_department_id: ['RECORD_INTAKE', 'ACCESS_CONTROLLER', 'PUBLISHING_CONTROLLER'].includes(profile.key)
+                            fms_owned_department_id: profile.key === 'VIEW_DOWNLOAD_UPLOAD'
                               ? current.fms_owned_department_id
                               : ''
                           }))}
@@ -630,64 +601,11 @@ const AdminFmsRoles = () => {
                             {isActive ? <span className="badge badge-blue">Selected</span> : null}
                           </div>
                           <div style={{ color: '#5f748e', fontSize: '12px', lineHeight: 1.55, marginBottom: '6px' }}>{profile.shortDescription}</div>
-                          <div style={{ color: '#173c6d', fontSize: '11px', fontWeight: 700, marginBottom: '3px' }}>Best fit</div>
-                          <div style={{ color: '#5f748e', fontSize: '11px', lineHeight: 1.5 }}>{profile.bankingUse}</div>
+                          <div style={{ color: '#5f748e', fontSize: '11px', lineHeight: 1.5 }}>{profile.description}</div>
                         </button>
                       );
                     })}
                   </div>
-                </div>
-                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label>Role Meaning In Banking Terms</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '12px' }}>
-                    <div style={{ border: '1px solid #dbe4ef', borderRadius: '12px', background: '#ffffff', padding: '14px 15px' }}>
-                      <div style={{ color: '#70839a', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>Hierarchy Scope</div>
-                      <div style={{ color: '#173c6d', fontWeight: 700, fontSize: '13px', lineHeight: 1.5 }}>{nextProfile?.hierarchySummary || fmsRoleProfiles[0].hierarchySummary}</div>
-                    </div>
-                    <div style={{ border: '1px solid #dbe4ef', borderRadius: '12px', background: '#ffffff', padding: '14px 15px' }}>
-                      <div style={{ color: '#70839a', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>Operational Use</div>
-                      <div style={{ color: '#173c6d', fontWeight: 700, fontSize: '13px', lineHeight: 1.5 }}>{nextProfile?.bankingUse || fmsRoleProfiles[0].bankingUse}</div>
-                    </div>
-                    <div style={{ border: '1px solid #dbe4ef', borderRadius: '12px', background: '#ffffff', padding: '14px 15px' }}>
-                      <div style={{ color: '#70839a', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>Download Rule</div>
-                      <div style={{ color: '#173c6d', fontWeight: 700, fontSize: '13px', lineHeight: 1.5 }}>{nextProfile?.downloadPolicy || fmsRoleProfiles[0].downloadPolicy}</div>
-                    </div>
-                    <div style={{ border: '1px solid #dbe4ef', borderRadius: '12px', background: '#ffffff', padding: '14px 15px' }}>
-                      <div style={{ color: '#70839a', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>Owned FMS Desk</div>
-                      <div style={{ color: '#173c6d', fontWeight: 700, fontSize: '13px', lineHeight: 1.5 }}>
-                        {selectedOwnedFmsDepartment?.name || selectedOwnedFmsDepartment?.path_key || 'Not fixed to one department'}
-                      </div>
-                    </div>
-                  </div>
-                  <label>What This Role Allows</label>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {availableFmsPermissions.map((permission) => (
-                      <span key={permission} className={`badge ${nextPermissions.includes(permission) ? 'badge-green' : 'badge-blue'}`} style={{ opacity: nextPermissions.includes(permission) ? 1 : 0.45 }}>
-                        {permissionDisplayLabel(permission)}
-                      </span>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
-                    {permissionsToAdd.map((permission) => (
-                      <span key={`added-${permission}`} className="badge badge-blue">Adds {permissionDisplayLabel(permission)}</span>
-                    ))}
-                    {permissionsToRemove.map((permission) => (
-                      <span key={`removed-${permission}`} className="badge badge-amber">Removes {permissionDisplayLabel(permission)}</span>
-                    ))}
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginTop: '12px' }}>
-                    {(nextProfile?.accessMatrix || fmsRoleProfiles[0].accessMatrix).map((item) => (
-                      <div key={item.label} style={{ border: '1px solid #dbe4ef', borderRadius: '12px', background: '#ffffff', padding: '12px 13px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                          <strong style={{ color: '#173c6d', fontSize: '12px' }}>{item.label}</strong>
-                          <span className={`badge ${accessMatrixBadgeTone(item.state)}`}>{accessMatrixLabel(item.state)}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <small className="text-muted text-sm">
-                    Use this with the indexing model already present in FMS: account number, CIF, customer identity, document reference, department, branch, and uploader. This keeps the library useful for future search, not only for today’s upload.
-                  </small>
                 </div>
               </div>
 

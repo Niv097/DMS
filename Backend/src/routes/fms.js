@@ -39,6 +39,7 @@ import {
   revokeFmsGrant,
   revokeFmsNodeGrant,
   streamFmsDocument,
+  streamFmsDocumentPreviewFile,
   streamFmsDocumentPreviewImage,
   updateFmsLibraryStandards,
   updateFmsDepartment,
@@ -95,6 +96,7 @@ router.get('/documents/:id/distributions', requireFmsPermission(FMS_PERMISSIONS.
 router.post('/documents/:id/distributions', requireFmsPermission(FMS_PERMISSIONS.VIEW), validateBody(fmsDistributionSchema), createFmsDistribution);
 router.get('/documents/:id/previews', requireFmsPermission(FMS_PERMISSIONS.VIEW), listFmsDocumentPreviewPages);
 router.get('/documents/:id/previews/:pageNumber/image', requireFmsPermission(FMS_PERMISSIONS.VIEW), streamFmsDocumentPreviewImage);
+router.get('/documents/:id/preview-file', requireFmsPermission(FMS_PERMISSIONS.VIEW), streamFmsDocumentPreviewFile);
 router.get('/documents/:id/file', requireFmsPermission(FMS_PERMISSIONS.VIEW), streamFmsDocument);
 router.get('/documents/:id/audit', requireFmsPermission(FMS_PERMISSIONS.VIEW), getFmsAuditLogs);
 router.post('/documents/:id/access-requests', requireFmsPermission(FMS_PERMISSIONS.VIEW), validateBody(fmsAccessRequestSchema), createFmsAccessRequest);

@@ -2600,16 +2600,22 @@ const FmsWorkspace = ({ section = 'register' }) => {
         title: recordTypeLabelMap[documentItem.document_type] || documentItem.document_type || documentItem.title || 'FMS record',
         reference: documentItem.document_reference || documentItem.customer_reference || documentItem.file_name || 'Protected preview',
         fileName: documentItem.file_name || 'fms-record',
+        mode: 'pages',
+        fileUrl: '',
         pages: [],
         loading: true
       });
       const previewResponse = await api.get(`/fms/documents/${documentItem.id}/previews`);
       const pages = Array.isArray(previewResponse.data?.pages) ? previewResponse.data.pages : [];
-      if (pages.length === 0) {
+      const mode = String(previewResponse.data?.mode || 'pages');
+      const fileUrl = String(previewResponse.data?.file_url || '');
+      if (mode === 'pages' && pages.length === 0) {
         throw new Error('Secure preview is unavailable for this record.');
       }
       setPreviewViewer((current) => current && current.documentId === documentItem.id ? {
         ...current,
+        mode,
+        fileUrl,
         pages,
         loading: false
       } : current);
@@ -5045,6 +5051,14 @@ const FmsWorkspace = ({ section = 'register' }) => {
               </div>
               {previewViewer.loading ? (
                 <div className="fms-empty-box">Preparing secure preview...</div>
+              ) : previewViewer.mode === 'pdf' ? (
+                <div className="fms-preview-pdf-frame">
+                  <iframe
+                    title={`${previewViewer.fileName} secure preview`}
+                    src={`${previewViewer.fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                    className="fms-preview-iframe"
+                  />
+                </div>
               ) : (
                 <div className="fms-preview-pages">
                   {previewViewer.pages.map((page) => (
@@ -5593,6 +5607,19 @@ const FmsWorkspace = ({ section = 'register' }) => {
           border-radius: 18px;
           border: 1px solid #dce6f3;
           background: linear-gradient(180deg, #fdfefe 0%, #f5f9ff 100%);
+        }
+        .fms-preview-pdf-frame {
+          min-height: 70vh;
+          border-radius: 18px;
+          border: 1px solid #dce6f3;
+          overflow: hidden;
+          background: #eef4fb;
+        }
+        .fms-preview-iframe {
+          width: 100%;
+          min-height: 70vh;
+          border: 0;
+          background: #ffffff;
         }
         .fms-preview-page-label {
           font-size: 11px;

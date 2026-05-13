@@ -57,7 +57,7 @@ import {
 import { createNotification } from '../services/notificationService.js';
 import { sendOperationalNotificationEmail } from '../services/emailService.js';
 import { ensureFmsDocumentStoredFileAvailable } from '../services/storageRecoveryService.js';
-import { resolveStoredPath, sanitizeStorageSegment, toStoredRelativePath } from '../utils/storage.js';
+import { ensureStoredParentDir, resolveStoredPath, sanitizeStorageSegment, toStoredRelativePath } from '../utils/storage.js';
 import { toPublicDocumentReference } from '../utils/documentReference.js';
 import logger from '../utils/logger.js';
 import approvedFileService from '../services/approvedFileService.js';
@@ -167,7 +167,14 @@ const getFmsPreviewImageStoredPath = (document, user, pageNumber) => toStoredRel
     `page-${pageNumber}.jpg`
   )
 );
-const generateFmsPreviewPages = async (user, document) => {
+const getFmsPreviewPdfStoredPath = (document, user) => toStoredRelativePath(
+  path.posix.join(
+    'previews',
+    sanitizeStorageSegment(buildFmsPreviewKey(document, user), 'preview'),
+    'preview.pdf'
+  )
+);
+const createFmsProtectedPreviewAsset = async (user, document) => {
   const controlledFile = await approvedFileService.createControlledDownloadBuffer({
     storedPath: document.stored_path,
     note: buildControlledCopyDocumentContext(document),
@@ -179,6 +186,11 @@ const generateFmsPreviewPages = async (user, document) => {
     securePreviewError.status = 503;
     throw securePreviewError;
   }
+
+  return controlledFile;
+};
+const generateFmsPreviewPages = async (user, document) => {
+  const controlledFile = await createFmsProtectedPreviewAsset(user, document);
 
   return previewService.generateDetachedPreviewPages({
     previewKey: buildFmsPreviewKey(document, user),
@@ -3393,15 +3405,33 @@ export const listFmsDocumentPreviewPages = async (req, res) => {
 
     await recordFmsPreviewAudit(req, document);
 
-    const pages = await generateFmsPreviewPages(req.user, document);
-    return res.json({
-      pages: pages.map((page) => ({
-        page_number: page.page_number,
-        image_url: `/api/fms/documents/${document.id}/previews/${page.page_number}/image?v=${page.cache_buster || Date.now()}`,
-        width: page.width,
-        height: page.height
-      }))
-    });
+    try {
+      const pages = await generateFmsPreviewPages(req.user, document);
+      return res.json({
+        mode: 'pages',
+        pages: pages.map((page) => ({
+          page_number: page.page_number,
+          image_url: `/api/fms/documents/${document.id}/previews/${page.page_number}/image?v=${page.cache_buster || Date.now()}`,
+          width: page.width,
+          height: page.height
+        }))
+      });
+    } catch (previewError) {
+      const controlledFile = await createFmsProtectedPreviewAsset(req.user, document);
+      if (!String(controlledFile.contentType || '').toLowerCase().includes('pdf')) {
+        throw previewError;
+      }
+
+      const previewPdfStoredPath = getFmsPreviewPdfStoredPath(document, req.user);
+      const previewPdfAbsolutePath = await ensureStoredParentDir(previewPdfStoredPath);
+      await fs.writeFile(previewPdfAbsolutePath, controlledFile.buffer);
+
+      return res.json({
+        mode: 'pdf',
+        file_url: `/api/fms/documents/${document.id}/preview-file?v=${Date.now()}`,
+        pages: []
+      });
+    }
   } catch (error) {
     logger.error('Protected FMS preview generation failed.', {
       document_id: req.params.id,
@@ -3454,6 +3484,40 @@ export const streamFmsDocumentPreviewImage = async (req, res) => {
       error: error?.message || 'Unknown secure preview image error'
     });
     return res.status(error.status || 500).json({ error: 'Unable to load secure preview image.' });
+  }
+};
+
+export const streamFmsDocumentPreviewFile = async (req, res) => {
+  try {
+    assertFmsPermission(req.user, FMS_PERMISSIONS.VIEW);
+    let document = await assertDocumentAccessible(req.user, parseId(req.params.id));
+    document = await ensureFmsDocumentStoredFileAvailable(document);
+
+    const previewPdfStoredPath = getFmsPreviewPdfStoredPath(document, req.user);
+    try {
+      await fs.access(resolveStoredPath(previewPdfStoredPath));
+    } catch {
+      const controlledFile = await createFmsProtectedPreviewAsset(req.user, document);
+      if (!String(controlledFile.contentType || '').toLowerCase().includes('pdf')) {
+        return res.status(404).json({ error: 'Preview file is not available for this record.' });
+      }
+      const previewPdfAbsolutePath = await ensureStoredParentDir(previewPdfStoredPath);
+      await fs.writeFile(previewPdfAbsolutePath, controlledFile.buffer);
+    }
+
+    await sendStoredFile(res, previewPdfStoredPath, {
+      downloadName: `${document.file_name || `fms-${document.id}`}-preview.pdf`,
+      disposition: 'inline',
+      contentType: 'application/pdf',
+      cacheControl: 'private, no-store'
+    });
+  } catch (error) {
+    logger.error('Protected FMS preview file streaming failed.', {
+      document_id: req.params.id,
+      user_id: req.user?.id || null,
+      error: error?.message || 'Unknown secure preview file error'
+    });
+    return res.status(error.status || 500).json({ error: 'Unable to load secure preview file.' });
   }
 };
 

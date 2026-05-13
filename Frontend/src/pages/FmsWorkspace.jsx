@@ -1280,6 +1280,14 @@ const FmsWorkspace = ({ section = 'register' }) => {
     () => (['ADMIN', 'SUPER_ADMIN'].includes(user?.role) ? [] : distributionInbox),
     [distributionInbox, user?.role]
   );
+  const visibleDirectCircularInboxItems = useMemo(
+    () => visibleCircularInboxItems.filter((item) => !item.is_bank_wide_mandatory),
+    [visibleCircularInboxItems]
+  );
+  const visibleMandatoryCircularInboxItems = useMemo(
+    () => visibleCircularInboxItems.filter((item) => item.is_bank_wide_mandatory),
+    [visibleCircularInboxItems]
+  );
   const unreadMandatoryDistributionCount = useMemo(
     () => mandatoryDistributionInboxItems.filter((item) => !item.viewed_at).length,
     [mandatoryDistributionInboxItems]
@@ -3202,7 +3210,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
                     ))}
                   </div>
                 )}
-                  <div className="fms-grant-list">
+                <div className="fms-grant-list">
                   {visibleCircularInboxItems.length === 0 && (!canManageLibrary || circularDocuments.length === 0) ? (
                     <div className="fms-empty-box">
                       <strong>No active circulars are assigned to your current user, branch, or department scope yet.</strong>
@@ -3212,65 +3220,135 @@ const FmsWorkspace = ({ section = 'register' }) => {
                         </div>
                       ) : null}
                     </div>
-                  ) : visibleCircularInboxItems.map((item) => (
-                    <div key={`distribution-inbox-${item.id}`} className="fms-grant-card fms-circular-inbox-card" style={{ alignItems: 'stretch' }}>
-                      <div style={{ flex: 1 }}>
-                        <strong>{item.distribution?.title || item.document?.title || 'Controlled circular'}</strong>
-                        {showOperatorCircularCards ? (
-                          <>
-                            <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
-                              {item.is_bank_wide_mandatory ? 'Mandatory bank-wide release' : (distributionInstructionLabelMap[item.distribution?.instruction_type] || item.distribution?.instruction_type)} - {accessLevelLabel[item.distribution?.access_level] || item.distribution?.access_level || 'View Only'} - Targeted to {item.target_label}
+                  ) : (
+                    <>
+                      {visibleDirectCircularInboxItems.length > 0 && (
+                        <>
+                          <div className="fms-subtitle-row" style={{ marginTop: '6px' }}>
+                            <div>
+                              <strong>Direct Circular Assignments</strong>
+                              <small>These circulars were assigned specifically to your user, branch, or department and are separate from bank-wide releases.</small>
                             </div>
-                            <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
-                              {item.distribution?.message || 'No additional instruction note was attached.'}
+                          </div>
+                          {visibleDirectCircularInboxItems.map((item) => (
+                            <div key={`distribution-inbox-direct-${item.id}`} className="fms-grant-card fms-circular-inbox-card" style={{ alignItems: 'stretch' }}>
+                              <div style={{ flex: 1 }}>
+                                <strong>{item.distribution?.title || item.document?.title || 'Controlled circular'}</strong>
+                                {showOperatorCircularCards ? (
+                                  <>
+                                    <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
+                                      {(distributionInstructionLabelMap[item.distribution?.instruction_type] || item.distribution?.instruction_type)} - {accessLevelLabel[item.distribution?.access_level] || item.distribution?.access_level || 'View Only'} - Targeted to {item.target_label}
+                                    </div>
+                                    <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
+                                      {item.distribution?.message || 'No additional instruction note was attached.'}
+                                    </div>
+                                    <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
+                                      {item.document?.title || 'Document'} - {item.document?.document_reference || item.document?.file_name || 'No reference'} - {item.distribution?.due_at ? `Due ${formatDateTime(item.distribution.due_at)}` : 'No due date'}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
+                                    {item.document?.document_reference || item.document?.file_name || 'No reference'}{item.distribution?.due_at ? ` - Due ${formatDateTime(item.distribution.due_at)}` : ''}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="fms-action-list" style={{ minWidth: '220px', alignItems: 'flex-end' }}>
+                                {showOperatorCircularCards ? <span className="fms-share-pill">{item.status}</span> : null}
+                                {item.document?.id ? (
+                                  <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document && downloadDocument(item.document, 'inline')}>View</button>
+                                ) : null}
+                                {isBankAdminRole ? (
+                                  <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document?.id && openDocumentPage(item.document.id)}>View Circular</button>
+                                ) : null}
+                                {(item.document?.can_download || item.document?.viewer_access_level === 'DOWNLOAD' || item.distribution?.access_level === 'DOWNLOAD') && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => item.document && downloadDocument(item.document, 'attachment')}
+                                  >
+                                    Download
+                                  </button>
+                                )}
+                                {isBankAdminRole && item.status === 'PENDING' && (
+                                  <button type="button" className="btn btn-outline btn-sm" onClick={() => handleDistributionRecipientAction(item.id, 'acknowledge')} disabled={saving}>Acknowledge</button>
+                                )}
+                                {isBankAdminRole && item.status !== 'COMPLETED' && item.distribution?.instruction_type === 'ACTION' && (
+                                  <button type="button" className="btn btn-primary btn-sm" onClick={() => handleDistributionRecipientAction(item.id, 'complete')} disabled={saving}>Mark Action Done</button>
+                                )}
+                                {isBankAdminRole && item.can_forward && item.document?.id && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline btn-sm"
+                                    onClick={(event) => prepareForwardDistribution(event, item, item.document)}
+                                  >
+                                    Forward Downward
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
-                              {item.document?.title || 'Document'} - {item.document?.document_reference || item.document?.file_name || 'No reference'} - {item.distribution?.due_at ? `Due ${formatDateTime(item.distribution.due_at)}` : 'No due date'}
+                          ))}
+                        </>
+                      )}
+                      {visibleMandatoryCircularInboxItems.length > 0 && (
+                        <>
+                          <div className="fms-subtitle-row" style={{ marginTop: '10px' }}>
+                            <div>
+                              <strong>Mandatory Bank-wide Circulars</strong>
+                              <small>These are the common circulars released to all bank users.</small>
                             </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
-                              {item.document?.document_reference || item.document?.file_name || 'No reference'}{item.distribution?.due_at ? ` - Due ${formatDateTime(item.distribution.due_at)}` : ''}
+                          </div>
+                          {visibleMandatoryCircularInboxItems.map((item) => (
+                            <div key={`distribution-inbox-mandatory-${item.id}`} className="fms-grant-card fms-circular-inbox-card" style={{ alignItems: 'stretch' }}>
+                              <div style={{ flex: 1 }}>
+                                <strong>{item.distribution?.title || item.document?.title || 'Controlled circular'}</strong>
+                                {showOperatorCircularCards ? (
+                                  <>
+                                    <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
+                                      Mandatory bank-wide release - {accessLevelLabel[item.distribution?.access_level] || item.distribution?.access_level || 'View Only'} - Targeted to {item.target_label}
+                                    </div>
+                                    <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
+                                      {item.distribution?.message || 'No additional instruction note was attached.'}
+                                    </div>
+                                    <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
+                                      {item.document?.title || 'Document'} - {item.document?.document_reference || item.document?.file_name || 'No reference'} - {item.distribution?.due_at ? `Due ${formatDateTime(item.distribution.due_at)}` : 'No due date'}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-muted text-sm" style={{ marginTop: '4px' }}>
+                                    {item.document?.document_reference || item.document?.file_name || 'No reference'}{item.distribution?.due_at ? ` - Due ${formatDateTime(item.distribution.due_at)}` : ''}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="fms-action-list" style={{ minWidth: '220px', alignItems: 'flex-end' }}>
+                                {showOperatorCircularCards ? <span className="fms-share-pill">{item.status}</span> : null}
+                                {item.document?.id ? (
+                                  <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document && downloadDocument(item.document, 'inline')}>View</button>
+                                ) : null}
+                                {isBankAdminRole ? (
+                                  <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document?.id && openDocumentPage(item.document.id)}>View Circular</button>
+                                ) : null}
+                                {(item.document?.can_download || item.document?.viewer_access_level === 'DOWNLOAD' || item.distribution?.access_level === 'DOWNLOAD') && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => item.document && downloadDocument(item.document, 'attachment')}
+                                  >
+                                    Download
+                                  </button>
+                                )}
+                                {isBankAdminRole && item.status === 'PENDING' && (
+                                  <button type="button" className="btn btn-outline btn-sm" onClick={() => handleDistributionRecipientAction(item.id, 'acknowledge')} disabled={saving}>Acknowledge</button>
+                                )}
+                                {isBankAdminRole && item.status !== 'COMPLETED' && item.distribution?.instruction_type === 'ACTION' && (
+                                  <button type="button" className="btn btn-primary btn-sm" onClick={() => handleDistributionRecipientAction(item.id, 'complete')} disabled={saving}>Mark Action Done</button>
+                                )}
+                              </div>
                             </div>
-                          </>
-                        )}
-                      </div>
-                      <div className="fms-action-list" style={{ minWidth: '220px', alignItems: 'flex-end' }}>
-                        {showOperatorCircularCards ? <span className="fms-share-pill">{item.status}</span> : null}
-                        {item.document?.id ? (
-                          <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document && downloadDocument(item.document, 'inline')}>View</button>
-                        ) : null}
-                        {isBankAdminRole ? (
-                          <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document?.id && openDocumentPage(item.document.id)}>View Circular</button>
-                        ) : null}
-                        {(item.document?.can_download || item.document?.viewer_access_level === 'DOWNLOAD' || item.distribution?.access_level === 'DOWNLOAD') && (
-                          <button
-                            type="button"
-                            className="btn btn-primary btn-sm"
-                            onClick={() => item.document && downloadDocument(item.document, 'attachment')}
-                          >
-                            Download
-                          </button>
-                        )}
-                        {isBankAdminRole && item.status === 'PENDING' && (
-                          <button type="button" className="btn btn-outline btn-sm" onClick={() => handleDistributionRecipientAction(item.id, 'acknowledge')} disabled={saving}>Acknowledge</button>
-                        )}
-                        {isBankAdminRole && item.status !== 'COMPLETED' && item.distribution?.instruction_type === 'ACTION' && (
-                          <button type="button" className="btn btn-primary btn-sm" onClick={() => handleDistributionRecipientAction(item.id, 'complete')} disabled={saving}>Mark Action Done</button>
-                        )}
-                        {isBankAdminRole && item.can_forward && item.document?.id && (
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-sm"
-                            onClick={(event) => prepareForwardDistribution(event, item, item.document)}
-                          >
-                            Forward Downward
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                          ))}
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -3873,7 +3951,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
             <div className="card-body">
               <div className="fms-subtitle-row">
                 <div>
-                  <strong>{documents.length} record(s) in your accessible register</strong>
+                  <strong>{libraryDocuments.length} record(s) in your accessible register</strong>
                   <small>{isAdminOperator
                     ? 'This register shows files placed in visible bank folders, plus any direct or inherited access shared into your current scope.'
                     : (isViewerOnlyFmsUser

@@ -1224,6 +1224,53 @@ const buildDistributionTargetLabel = (recipient) => {
   return 'Target not available';
 };
 
+const buildDistributionTargetMatchWhere = ({ targetType, targetUserId, targetBranchId, targetDepartmentMasterId }) => {
+  if (targetType === 'BANK_WIDE') {
+    return {
+      recipients: {
+        some: {
+          target_type: 'BANK_WIDE'
+        }
+      }
+    };
+  }
+
+  if (targetType === 'USER' && targetUserId) {
+    return {
+      recipients: {
+        some: {
+          target_type: 'USER',
+          target_user_id: targetUserId
+        }
+      }
+    };
+  }
+
+  if (targetType === 'BRANCH' && targetBranchId) {
+    return {
+      recipients: {
+        some: {
+          target_type: 'BRANCH',
+          target_branch_id: targetBranchId
+        }
+      }
+    };
+  }
+
+  if (targetType === 'DEPARTMENT' && targetDepartmentMasterId) {
+    return {
+      recipients: {
+        some: {
+          target_type: 'DEPARTMENT',
+          target_department_master_id: targetDepartmentMasterId
+        }
+      }
+    };
+  }
+
+  return null;
+};
+
 const matchesDistributionRecipient = (user, recipient) => {
   if (!user || !recipient) return false;
   if (
@@ -3378,6 +3425,12 @@ export const createFmsDistribution = async (req, res) => {
       document,
       sourceRecipient
     });
+    const targetMatchWhere = buildDistributionTargetMatchWhere({
+      targetType,
+      targetUserId,
+      targetBranchId,
+      targetDepartmentMasterId
+    });
     const resolvedParentDistributionId = parentDistributionId || sourceRecipient?.distribution?.id || null;
     const distributionTarget = targetType === 'DEPARTMENT'
       ? { department: await assertDepartmentTargetInTenant({ tenantId: document.tenant_id, departmentMasterId: targetDepartmentMasterId }) }
@@ -3391,6 +3444,32 @@ export const createFmsDistribution = async (req, res) => {
         }));
 
     const distribution = await prisma.$transaction(async (tx) => {
+      if (targetMatchWhere) {
+        const activeDistributionsToSupersede = await tx.fmsDistribution.findMany({
+          where: {
+            tenant_id: document.tenant_id,
+            document_id: document.id,
+            status: 'ACTIVE',
+            ...(sourceRecipient?.distribution?.id ? { id: { not: sourceRecipient.distribution.id } } : {}),
+            ...targetMatchWhere
+          },
+          select: { id: true }
+        });
+
+        if (activeDistributionsToSupersede.length > 0) {
+          await tx.fmsDistribution.updateMany({
+            where: {
+              id: {
+                in: activeDistributionsToSupersede.map((item) => item.id)
+              }
+            },
+            data: {
+              status: 'SUPERSEDED'
+            }
+          });
+        }
+      }
+
       const createdDistribution = await tx.fmsDistribution.create({
         data: {
           tenant_id: document.tenant_id,
@@ -3537,6 +3616,7 @@ export const createFmsDistribution = async (req, res) => {
       metadata: {
         distribution_id: distribution.id,
         parent_distribution_id: distribution.parent_distribution_id || null,
+        target_match_supersede_applied: Boolean(targetMatchWhere),
         target_type: targetType,
         target_user_id: targetUserId,
         target_branch_id: targetBranchId,
@@ -3564,7 +3644,8 @@ export const listFmsDistributionInbox = async (req, res) => {
     const accessibleDepartmentIds = getAccessibleDepartmentIds(req.user);
     const recipientWhere = {
       distribution: {
-        tenant_id: isSuperAdmin(req.user) ? (parseId(req.query.tenant_id) || req.user.tenant_id || undefined) : req.user.tenant_id
+        tenant_id: isSuperAdmin(req.user) ? (parseId(req.query.tenant_id) || req.user.tenant_id || undefined) : req.user.tenant_id,
+        status: 'ACTIVE'
       },
       OR: [
         { target_user_id: req.user.id },
@@ -3605,6 +3686,7 @@ export const listFmsMandatoryDistributions = async (req, res) => {
     const distributions = await prisma.fmsDistribution.findMany({
       where: {
         tenant_id: isSuperAdmin(req.user) ? (parseId(req.query.tenant_id) || req.user.tenant_id || undefined) : req.user.tenant_id,
+        status: 'ACTIVE',
         recipients: {
           some: {
             target_type: 'BANK_WIDE'
@@ -3667,6 +3749,9 @@ export const acknowledgeFmsDistributionRecipient = async (req, res) => {
     if (!recipient) {
       return res.status(404).json({ error: 'Distribution recipient not found.' });
     }
+    if (String(recipient.distribution?.status || '').toUpperCase() !== 'ACTIVE') {
+      return res.status(409).json({ error: 'This circular release is no longer active. Open the latest circular assignment from your inbox.' });
+    }
     if (!matchesDistributionRecipient(req.user, recipient)) {
       return res.status(403).json({ error: 'You are not allowed to acknowledge this distribution.' });
     }
@@ -3714,6 +3799,9 @@ export const completeFmsDistributionRecipient = async (req, res) => {
     });
     if (!recipient) {
       return res.status(404).json({ error: 'Distribution recipient not found.' });
+    }
+    if (String(recipient.distribution?.status || '').toUpperCase() !== 'ACTIVE') {
+      return res.status(409).json({ error: 'This circular release is no longer active. Open the latest circular assignment from your inbox.' });
     }
     if (!matchesDistributionRecipient(req.user, recipient)) {
       return res.status(403).json({ error: 'You are not allowed to complete this distribution task.' });

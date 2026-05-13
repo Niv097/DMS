@@ -3188,6 +3188,9 @@ const FmsWorkspace = ({ section = 'register' }) => {
                               Release Circular
                             </button>
                           )}
+                          <button type="button" className="btn btn-outline btn-sm" onClick={() => downloadDocument(documentItem, 'inline')}>
+                            View
+                          </button>
                           <button type="button" className="btn btn-outline btn-sm" onClick={() => openDocumentPage(documentItem.id)}>View Circular</button>
                           {documentItem.can_download && (
                             <button type="button" className="btn btn-primary btn-sm" onClick={() => downloadDocument(documentItem)}>
@@ -3235,6 +3238,9 @@ const FmsWorkspace = ({ section = 'register' }) => {
                       </div>
                       <div className="fms-action-list" style={{ minWidth: '220px', alignItems: 'flex-end' }}>
                         {showOperatorCircularCards ? <span className="fms-share-pill">{item.status}</span> : null}
+                        {item.document?.id ? (
+                          <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document && downloadDocument(item.document, 'inline')}>View</button>
+                        ) : null}
                         {isBankAdminRole ? (
                           <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document?.id && openDocumentPage(item.document.id)}>View Circular</button>
                         ) : null}
@@ -3952,6 +3958,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
                           <td>{formatLibraryFolderLabel(documentItem.owner_node)}</td>
                           <td>
                             <div className="fms-action-list fms-register-actions">
+                              <button type="button" className="btn btn-outline btn-sm" onClick={() => downloadDocument(documentItem, 'inline')}>View</button>
                               {isBankAdminRole ? (
                                 <button type="button" className="btn btn-outline btn-sm" onClick={() => openDocumentPage(documentItem.id)}>{canViewSensitiveFmsFiles ? 'Details' : 'Summary'}</button>
                               ) : null}
@@ -4019,6 +4026,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
                       <div><span>Classification</span><strong>{documentItem.classification}</strong></div>
                     </div>
                     <div className="fms-action-list fms-register-actions">
+                      <button type="button" className="btn btn-outline btn-sm" onClick={() => downloadDocument(documentItem, 'inline')}>View</button>
                       {isBankAdminRole ? (
                         <button type="button" className="btn btn-outline btn-sm" onClick={() => openDocumentPage(documentItem.id)}>{canViewSensitiveFmsFiles ? 'Details' : 'Summary'}</button>
                       ) : null}

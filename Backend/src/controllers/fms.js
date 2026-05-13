@@ -59,6 +59,7 @@ import { sendOperationalNotificationEmail } from '../services/emailService.js';
 import { ensureFmsDocumentStoredFileAvailable } from '../services/storageRecoveryService.js';
 import { resolveStoredPath } from '../utils/storage.js';
 import { toPublicDocumentReference } from '../utils/documentReference.js';
+import logger from '../utils/logger.js';
 import approvedFileService from '../services/approvedFileService.js';
 const supportsBranchAppendRequestModel = Boolean(prisma.fmsBranchAppendRequest);
 const supportsBranchAppendGrantModel = Boolean(prisma.fmsBranchAppendGrant);
@@ -3208,29 +3209,47 @@ export const streamFmsDocument = async (req, res) => {
       });
     }
 
-    if (disposition === 'attachment') {
-      try {
-        const controlledDownload = await approvedFileService.createControlledDownloadBuffer({
-          storedPath: document.stored_path,
-          note: buildControlledCopyDocumentContext(document),
-          downloadContext: buildFmsControlledCopyContext(downloadOfficer || req.user, document)
-        });
+    try {
+      const controlledFile = await approvedFileService.createControlledDownloadBuffer({
+        storedPath: document.stored_path,
+        note: buildControlledCopyDocumentContext(document),
+        downloadContext: buildFmsControlledCopyContext(downloadOfficer || req.user, document)
+      });
 
-        if (controlledDownload?.buffer) {
-          res.setHeader('Content-Type', controlledDownload.contentType || document.mime_type);
-          res.setHeader('Content-Disposition', `${disposition}; filename="${document.file_name.replace(/"/g, '')}"`);
-          res.setHeader('Cache-Control', 'private, no-store');
-          return res.send(controlledDownload.buffer);
-        }
-      } catch {
-        // fall through to physical file when watermark generation is unavailable
+      if (!controlledFile?.buffer) {
+        const secureDeliveryError = new Error('Secure file rendering is unavailable for this record.');
+        secureDeliveryError.status = 503;
+        throw secureDeliveryError;
       }
-    }
 
-    res.setHeader('Content-Type', document.mime_type);
-    res.setHeader('Content-Disposition', `${disposition}; filename="${document.file_name.replace(/"/g, '')}"`);
-    res.setHeader('Cache-Control', 'private, no-store');
-    return res.sendFile(resolveStoredPath(document.stored_path));
+      res.setHeader('Content-Type', controlledFile.contentType || document.mime_type);
+      res.setHeader('Content-Disposition', `${disposition}; filename="${document.file_name.replace(/"/g, '')}"`);
+      res.setHeader('Cache-Control', 'private, no-store');
+      return res.send(controlledFile.buffer);
+    } catch (controlledFileError) {
+      logger.error('Protected FMS file delivery failed; raw file fallback blocked.', {
+        document_id: document.id,
+        stored_path: document.stored_path,
+        disposition,
+        user_id: req.user?.id || null,
+        error: controlledFileError?.message || 'Unknown secure delivery error'
+      });
+      writeSecurityAudit('FMS_DOCUMENT_PROTECTED_DELIVERY_BLOCKED', {
+        user_id: req.user?.id,
+        tenant_id: document.tenant_id,
+        branch_id: req.user?.branch_id || document.branch_id || null,
+        document_reference: document.document_reference || document.file_name,
+        file_name: document.file_name,
+        disposition,
+        reason: 'protected_delivery_failed_raw_fallback_blocked',
+        ip: req.ip
+      });
+      return res.status(controlledFileError.status || 503).json({
+        error: disposition === 'attachment'
+          ? 'Controlled download is temporarily unavailable for this record. Raw file delivery has been blocked for security.'
+          : 'Secure preview is temporarily unavailable for this record. Raw file delivery has been blocked for security.'
+      });
+    }
   } catch (error) {
     return res.status(error.status || 500).json({ error: error.message });
   }
@@ -3354,13 +3373,11 @@ export const createFmsDistribution = async (req, res) => {
     if (sourceRecipient && parentDistributionId && Number(sourceRecipient.distribution?.id) !== Number(parentDistributionId)) {
       return res.status(400).json({ error: 'Source recipient does not belong to the selected parent distribution.' });
     }
-
     assertDistributionAuthority({
       user: req.user,
       document,
       sourceRecipient
     });
-
     const resolvedParentDistributionId = parentDistributionId || sourceRecipient?.distribution?.id || null;
     const distributionTarget = targetType === 'DEPARTMENT'
       ? { department: await assertDepartmentTargetInTenant({ tenantId: document.tenant_id, departmentMasterId: targetDepartmentMasterId }) }

@@ -845,6 +845,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
   const [showDistributionModal, setShowDistributionModal] = useState(false);
   const [distributionModalAnchor, setDistributionModalAnchor] = useState(null);
   const [distributionModalPosition, setDistributionModalPosition] = useState(null);
+  const [previewViewer, setPreviewViewer] = useState(null);
   const canViewSensitiveFmsFiles = hasSensitiveFileAdminAccess(user);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [downloadEmployeeId, setDownloadEmployeeId] = useState(isDemoDownloadMode ? DEMO_DOWNLOAD_EMPLOYEE_ID : '');
@@ -2594,22 +2595,27 @@ const FmsWorkspace = ({ section = 'register' }) => {
         });
         return;
       }
-      const response = await api.get(`/fms/documents/${documentItem.id}/file?disposition=${disposition}`, { responseType: 'blob' });
-      const blobUrl = window.URL.createObjectURL(response.data);
-      if (disposition === 'inline') {
-        window.open(blobUrl, '_blank', 'noopener,noreferrer');
-        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-        return;
+      setPreviewViewer({
+        documentId: documentItem.id,
+        title: recordTypeLabelMap[documentItem.document_type] || documentItem.document_type || documentItem.title || 'FMS record',
+        reference: documentItem.document_reference || documentItem.customer_reference || documentItem.file_name || 'Protected preview',
+        fileName: documentItem.file_name || 'fms-record',
+        pages: [],
+        loading: true
+      });
+      const previewResponse = await api.get(`/fms/documents/${documentItem.id}/previews`);
+      const pages = Array.isArray(previewResponse.data?.pages) ? previewResponse.data.pages : [];
+      if (pages.length === 0) {
+        throw new Error('Secure preview is unavailable for this record.');
       }
-      const anchor = window.document.createElement('a');
-      anchor.href = blobUrl;
-      anchor.download = documentItem.file_name;
-      window.document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.URL.revokeObjectURL(blobUrl);
+      setPreviewViewer((current) => current && current.documentId === documentItem.id ? {
+        ...current,
+        pages,
+        loading: false
+      } : current);
     } catch (error) {
-      setMessage(error.response?.data?.error || 'Unable to open file.');
+      setPreviewViewer(null);
+      setMessage(error.response?.data?.error || error.message || 'Unable to open secure preview.');
     }
   };
 
@@ -5025,6 +5031,46 @@ const FmsWorkspace = ({ section = 'register' }) => {
         </div>
         )}
 
+        {previewViewer && (
+          <div className="fms-modal-backdrop" role="presentation" onClick={() => !previewViewer.loading && setPreviewViewer(null)}>
+            <div className="fms-modal-card fms-preview-modal-card" role="dialog" aria-modal="true" aria-labelledby="fms-preview-title" onClick={(event) => event.stopPropagation()}>
+              <div className="fms-modal-eyebrow">Protected View</div>
+              <div className="fms-modal-title" id="fms-preview-title">Secure Record Preview</div>
+              <div className="fms-modal-copy">
+                <strong>{previewViewer.title}</strong>
+                <span>{previewViewer.reference}</span>
+              </div>
+              <div className="fms-preview-note">
+                This view is rendered as protected preview images only. Raw file preview delivery and browser PDF download toolbar access are blocked for banking security.
+              </div>
+              {previewViewer.loading ? (
+                <div className="fms-empty-box">Preparing secure preview...</div>
+              ) : (
+                <div className="fms-preview-pages">
+                  {previewViewer.pages.map((page) => (
+                    <div key={page.page_number} className="fms-preview-page-card">
+                      <div className="fms-preview-page-label">Page {page.page_number}</div>
+                      <img
+                        src={page.image_url}
+                        alt={`${previewViewer.fileName} preview page ${page.page_number}`}
+                        className="fms-preview-image"
+                        loading="lazy"
+                        draggable="false"
+                        onContextMenu={(event) => event.preventDefault()}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="fms-modal-actions">
+                <button type="button" className="btn btn-outline" onClick={() => setPreviewViewer(null)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {downloadPrompt && (
           <div className="bank-download-modal-backdrop" role="presentation" onClick={() => !downloadSubmitting && setDownloadPrompt(null)}>
             <div className="bank-download-modal" role="dialog" aria-modal="true" aria-labelledby="fms-download-title" onClick={(event) => event.stopPropagation()}>
@@ -5522,6 +5568,47 @@ const FmsWorkspace = ({ section = 'register' }) => {
         .fms-form-modal-card {
           width: min(100%, 540px);
           max-height: min(84vh, 860px);
+        }
+        .fms-preview-modal-card {
+          width: min(100%, 980px);
+          max-height: min(88vh, 920px);
+        }
+        .fms-preview-note {
+          padding: 12px 14px;
+          border-radius: 14px;
+          border: 1px solid #d6e1ef;
+          background: #f8fbff;
+          color: #476482;
+          font-size: 13px;
+          line-height: 1.55;
+        }
+        .fms-preview-pages {
+          display: grid;
+          gap: 16px;
+        }
+        .fms-preview-page-card {
+          display: grid;
+          gap: 10px;
+          padding: 14px;
+          border-radius: 18px;
+          border: 1px solid #dce6f3;
+          background: linear-gradient(180deg, #fdfefe 0%, #f5f9ff 100%);
+        }
+        .fms-preview-page-label {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #6b7f99;
+        }
+        .fms-preview-image {
+          width: 100%;
+          border-radius: 14px;
+          border: 1px solid #d6e0eb;
+          background: #ffffff;
+          user-select: none;
+          -webkit-user-drag: none;
+          pointer-events: auto;
         }
         .fms-form-modal-card .form-grid.cols-2 {
           grid-template-columns: 1fr;

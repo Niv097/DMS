@@ -57,10 +57,11 @@ import {
 import { createNotification } from '../services/notificationService.js';
 import { sendOperationalNotificationEmail } from '../services/emailService.js';
 import { ensureFmsDocumentStoredFileAvailable } from '../services/storageRecoveryService.js';
-import { resolveStoredPath } from '../utils/storage.js';
+import { resolveStoredPath, sanitizeStorageSegment, toStoredRelativePath } from '../utils/storage.js';
 import { toPublicDocumentReference } from '../utils/documentReference.js';
 import logger from '../utils/logger.js';
 import approvedFileService from '../services/approvedFileService.js';
+import previewService from '../services/previewService.js';
 const supportsBranchAppendRequestModel = Boolean(prisma.fmsBranchAppendRequest);
 const supportsBranchAppendGrantModel = Boolean(prisma.fmsBranchAppendGrant);
 const supportsNodeGrantModel = Boolean(prisma.fmsNodeAccessGrant);
@@ -94,6 +95,21 @@ const parseOptionalDate = (value) => {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+};
+const sendStoredFile = async (res, storedPath, {
+  downloadName = path.basename(String(storedPath || 'file')),
+  disposition = 'inline',
+  contentType = null,
+  cacheControl = 'private, no-store'
+} = {}) => {
+  const resolved = resolveStoredPath(storedPath);
+  await fs.access(resolved);
+  res.setHeader('Content-Disposition', `${disposition}; filename="${downloadName.replace(/"/g, '')}"`);
+  res.setHeader('Cache-Control', cacheControl);
+  if (contentType) {
+    res.setHeader('Content-Type', contentType);
+  }
+  res.sendFile(resolved);
 };
 const normalizeEmployeeId = (value) => String(value || '').trim().toUpperCase();
 const formatWorkflowTimestamp = (value) => {
@@ -138,6 +154,68 @@ const buildFmsControlledCopyContext = (user, document) => ({
     document?.branch || null
   )
 });
+const buildFmsPreviewKey = (document, user) => [
+  'fms-document',
+  document?.id || 'unknown',
+  'user',
+  user?.id || 'anonymous'
+].join('-');
+const getFmsPreviewImageStoredPath = (document, user, pageNumber) => toStoredRelativePath(
+  path.posix.join(
+    'previews',
+    sanitizeStorageSegment(buildFmsPreviewKey(document, user), 'preview'),
+    `page-${pageNumber}.jpg`
+  )
+);
+const generateFmsPreviewPages = async (user, document) => {
+  const controlledFile = await approvedFileService.createControlledDownloadBuffer({
+    storedPath: document.stored_path,
+    note: buildControlledCopyDocumentContext(document),
+    downloadContext: buildFmsControlledCopyContext(user, document)
+  });
+
+  if (!controlledFile?.buffer) {
+    const securePreviewError = new Error('Secure preview rendering is unavailable for this record.');
+    securePreviewError.status = 503;
+    throw securePreviewError;
+  }
+
+  return previewService.generateDetachedPreviewPages({
+    previewKey: buildFmsPreviewKey(document, user),
+    sourcePath: document.stored_path,
+    sourceBuffer: controlledFile.buffer,
+    cacheBuster: Date.now()
+  });
+};
+const recordFmsPreviewAudit = async (req, document) => {
+  writeSecurityAudit('FMS_DOCUMENT_VIEWED', {
+    user_id: req.user?.id,
+    role: req.user?.role?.name || req.user?.role,
+    tenant_id: document.tenant_id,
+    branch_id: req.user?.branch_id || document.branch_id || null,
+    document_reference: document.document_reference || document.file_name,
+    file_name: document.file_name,
+    reason: 'preview',
+    ip: req.ip
+  });
+  await writeFmsAuditLog({
+    tenantId: document.tenant_id,
+    ownerNodeId: document.owner_node_id,
+    documentId: document.id,
+    actorUserId: req.user?.id,
+    action: 'FMS_RECORD_VIEWED',
+    remarks: buildFmsDownloadRemarks({
+      user: req.user,
+      document,
+      accessType: 'inline'
+    }),
+    metadata: {
+      employee_id: req.user?.employee_id || null,
+      disposition: 'inline',
+      source_origin: document.source_note_id ? 'DMS' : 'MANUAL'
+    }
+  });
+};
 const buildControlledCopyDocumentContext = (document) => ({
   document_group_key: document?.document_reference || document?.version_group_key || document?.file_name || '',
   document_code: document?.document_reference || document?.customer_reference || document?.version_group_key || '',
@@ -3216,6 +3294,11 @@ export const streamFmsDocument = async (req, res) => {
     const appendAccess = await loadAppendAccess(req.user, document.tenant_id);
     const nodeGrantAccess = await loadNodeGrantAccess(req.user, document.tenant_id);
     const disposition = String(req.query.disposition || 'inline').toLowerCase() === 'attachment' ? 'attachment' : 'inline';
+    if (disposition === 'inline') {
+      return res.status(403).json({
+        error: 'Secure preview must be opened through the protected view panel. Raw file preview delivery is blocked for banking security.'
+      });
+    }
     if (disposition === 'attachment' && !hasFmsDownloadAccess(req.user, document, appendAccess, nodeGrantAccess)) {
       return res.status(403).json({ error: 'Download is not allowed for your current FMS access level.' });
     }
@@ -3299,6 +3382,78 @@ export const streamFmsDocument = async (req, res) => {
     }
   } catch (error) {
     return res.status(error.status || 500).json({ error: error.message });
+  }
+};
+
+export const listFmsDocumentPreviewPages = async (req, res) => {
+  try {
+    assertFmsPermission(req.user, FMS_PERMISSIONS.VIEW);
+    let document = await assertDocumentAccessible(req.user, parseId(req.params.id));
+    document = await ensureFmsDocumentStoredFileAvailable(document);
+
+    await recordFmsPreviewAudit(req, document);
+
+    const pages = await generateFmsPreviewPages(req.user, document);
+    return res.json({
+      pages: pages.map((page) => ({
+        page_number: page.page_number,
+        image_url: `/api/fms/documents/${document.id}/previews/${page.page_number}/image?v=${page.cache_buster || Date.now()}`,
+        width: page.width,
+        height: page.height
+      }))
+    });
+  } catch (error) {
+    logger.error('Protected FMS preview generation failed.', {
+      document_id: req.params.id,
+      user_id: req.user?.id || null,
+      error: error?.message || 'Unknown secure preview error'
+    });
+    writeSecurityAudit('FMS_DOCUMENT_PROTECTED_DELIVERY_BLOCKED', {
+      user_id: req.user?.id,
+      role: req.user?.role?.name || req.user?.role,
+      tenant_id: req.user?.tenant_id || null,
+      document_reference: req.params.id,
+      reason: 'protected_preview_generation_failed',
+      ip: req.ip
+    });
+    return res.status(error.status || 503).json({
+      error: 'Secure preview is temporarily unavailable for this record. Raw file delivery remains blocked for security.'
+    });
+  }
+};
+
+export const streamFmsDocumentPreviewImage = async (req, res) => {
+  try {
+    assertFmsPermission(req.user, FMS_PERMISSIONS.VIEW);
+    let document = await assertDocumentAccessible(req.user, parseId(req.params.id));
+    document = await ensureFmsDocumentStoredFileAvailable(document);
+
+    const pageNumber = parseId(req.params.pageNumber);
+    if (!pageNumber || pageNumber < 1) {
+      return res.status(400).json({ error: 'Invalid preview page number.' });
+    }
+
+    const previewImagePath = getFmsPreviewImageStoredPath(document, req.user, pageNumber);
+    try {
+      await fs.access(resolveStoredPath(previewImagePath));
+    } catch {
+      await generateFmsPreviewPages(req.user, document);
+    }
+
+    await sendStoredFile(res, previewImagePath, {
+      downloadName: `${document.file_name || `fms-${document.id}`}-preview-${pageNumber}.jpg`,
+      disposition: 'inline',
+      contentType: 'image/jpeg',
+      cacheControl: 'private, no-store'
+    });
+  } catch (error) {
+    logger.error('Protected FMS preview image streaming failed.', {
+      document_id: req.params.id,
+      page_number: req.params.pageNumber,
+      user_id: req.user?.id || null,
+      error: error?.message || 'Unknown secure preview image error'
+    });
+    return res.status(error.status || 500).json({ error: 'Unable to load secure preview image.' });
   }
 };
 

@@ -9,6 +9,7 @@ import {
   getStorageRoot,
   getVersionArchiveSubdirs,
   resolveStoredPath,
+  sanitizeStorageSegment,
   toStoredRelativePath
 } from '../utils/storage.js';
 
@@ -48,6 +49,45 @@ const listPreviewPages = async (previewDir, sourceType = 'pdf', cacheBuster = Da
 };
 
 class PreviewService {
+  async generateDetachedPreviewPages({
+    previewKey,
+    sourcePath,
+    sourceBuffer = null,
+    cacheBuster = Date.now()
+  }) {
+    await ensureStorageRoot();
+    const referencePath = sourcePath || previewKey;
+    const extension = path.extname(String(referencePath || '')).toLowerCase();
+    const previewDir = resolveStoredPath(
+      toStoredRelativePath(path.posix.join('previews', sanitizeStorageSegment(previewKey, 'preview')))
+    );
+
+    await clearDir(previewDir);
+
+    if (extension === '.pdf') {
+      const pdfPath = sourceBuffer
+        ? path.join(previewDir, '__source.pdf')
+        : resolveFilePath(sourcePath);
+
+      if (sourceBuffer) {
+        await fs.writeFile(pdfPath, sourceBuffer);
+      }
+
+      await runPdfToImages(pdfPath, previewDir);
+      return listPreviewPages(previewDir, 'pdf', cacheBuster);
+    }
+
+    if (/\.(png|jpe?g|webp|gif|tiff?)$/i.test(extension)) {
+      const targetPath = path.join(previewDir, 'page-1.jpg');
+      await sharp(sourceBuffer || resolveFilePath(sourcePath))
+        .jpeg({ quality: 92 })
+        .toFile(targetPath);
+      return listPreviewPages(previewDir, 'image', cacheBuster);
+    }
+
+    return [];
+  }
+
   async generatePreviewPages(note, attachmentPath) {
     await ensureStorageRoot();
     const resolvedPath = resolveFilePath(attachmentPath);

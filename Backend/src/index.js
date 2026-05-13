@@ -61,6 +61,8 @@ if (trustProxy) {
 
 app.use(helmet({
   crossOriginResourcePolicy: false,
+  crossOriginOpenerPolicy: false,
+  originAgentCluster: false,
   hsts: trustProxy ? undefined : false,
   noSniff: true,
   referrerPolicy: { policy: 'no-referrer' },

@@ -56,6 +56,7 @@ import {
 } from '../services/fmsService.js';
 import { createNotification } from '../services/notificationService.js';
 import { sendOperationalNotificationEmail } from '../services/emailService.js';
+import { ensureFmsDocumentStoredFileAvailable } from '../services/storageRecoveryService.js';
 import { resolveStoredPath } from '../utils/storage.js';
 import { toPublicDocumentReference } from '../utils/documentReference.js';
 import approvedFileService from '../services/approvedFileService.js';
@@ -3162,7 +3163,8 @@ export const archiveFmsDocument = async (req, res) => {
 export const streamFmsDocument = async (req, res) => {
   try {
     assertFmsPermission(req.user, FMS_PERMISSIONS.VIEW);
-    const document = await assertDocumentAccessible(req.user, parseId(req.params.id));
+    let document = await assertDocumentAccessible(req.user, parseId(req.params.id));
+    document = await ensureFmsDocumentStoredFileAvailable(document);
     const appendAccess = await loadAppendAccess(req.user, document.tenant_id);
     const nodeGrantAccess = await loadNodeGrantAccess(req.user, document.tenant_id);
     const disposition = String(req.query.disposition || 'inline').toLowerCase() === 'attachment' ? 'attachment' : 'inline';

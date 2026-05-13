@@ -17,6 +17,7 @@
     "dr:import": "node scripts/import-dr-package.mjs",
     "restore:db": "node scripts/restore-db.mjs",
     "backfill:dms-fms-history": "node scripts/backfill-dms-fms-history.mjs",
+    "storage:reconcile": "node scripts/reconcile-storage-records.mjs",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:db:push": "prisma db push --schema prisma/schema.prisma",

@@ -17,6 +17,7 @@ import {
 } from '../services/fmsService.js';
 import { createNotification } from '../services/notificationService.js';
 import { sendOperationalNotificationEmail } from '../services/emailService.js';
+import { ensureNoteApprovedArtifactAvailable } from '../services/storageRecoveryService.js';
 import { extractTextFromImage, extractTextFromPdf, deriveFieldsFromText } from '../utils/ocr.js';
 import { enableDemoFeatures } from '../config/env.js';
 import { writeSecurityAudit } from '../utils/securityAudit.js';
@@ -1341,7 +1342,7 @@ async function refreshApprovedArtifactIfNeeded(note) {
   const mainAttachment = getMainAttachment(artifactNote);
   const artifact = await approvedFileService.createApprovedArtifact(artifactNote, mainAttachment);
   if (!artifact) {
-    return artifactNote;
+    return ensureNoteApprovedArtifactAvailable(artifactNote);
   }
 
   const updatedNote = await prisma.note.update({
@@ -1355,7 +1356,7 @@ async function refreshApprovedArtifactIfNeeded(note) {
     approvedFile: artifact,
     stage: updatedNote.status
   }).catch(() => {});
-  return updatedNote;
+  return ensureNoteApprovedArtifactAvailable(updatedNote);
 }
 
 async function autoArchiveApprovedNoteToFms(noteId, actorUser) {
@@ -3344,6 +3345,7 @@ export const generateApprovedPDF = async (req, res) => {
     }
 
     note = await refreshApprovedArtifactIfNeeded(note);
+    note = await ensureNoteApprovedArtifactAvailable(note);
 
     let approvedPath = note.approved_file_path;
     if (!approvedPath || !approvedPath.toLowerCase().endsWith('.pdf')) {

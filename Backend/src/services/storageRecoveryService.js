@@ -99,8 +99,7 @@ export const ensureNoteApprovedArtifactAvailable = async (noteOrId) => {
 
   const fmsCopy = await prisma.fmsDocument.findFirst({
     where: {
-      source_note_id: note.id,
-      stored_path: { not: null }
+      source_note_id: note.id
     },
     select: {
       stored_path: true,

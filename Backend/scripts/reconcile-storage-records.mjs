@@ -2,9 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import prisma from '../src/utils/prisma.js';
 import {
+  createPlaceholderStoredFile,
   doesStoredPathExist,
   ensureFmsDocumentStoredFileAvailable,
-  ensureNoteApprovedArtifactAvailable
+  ensureNoteApprovedArtifactAvailable,
+  ensureTenantLogoStoredFileAvailable
 } from '../src/services/storageRecoveryService.js';
 import {
   ensureStoredParentDir,
@@ -94,6 +96,19 @@ for (const tenant of tenants) {
         status: 'REPAIRED',
         detail: `Copied from ${absoluteToStoredPath(uniqueCandidate)}`
       });
+    } else {
+      await ensureTenantLogoStoredFileAvailable(tenant);
+      repaired = await doesStoredPathExist(tenant.brand_logo_path);
+      if (repaired) {
+        pushReportEntry({
+          type: 'TENANT_LOGO',
+          id: tenant.id,
+          label: tenant.tenant_name,
+          storedPath: tenant.brand_logo_path,
+          status: 'REPAIRED_PLACEHOLDER',
+          detail: 'Generated placeholder logo because no source file was available.'
+        });
+      }
     }
   }
 
@@ -141,7 +156,7 @@ for (const note of notes) {
       label: note.note_id,
       storedPath: before,
       status: repaired ? 'REPAIRED' : 'MISSING',
-      detail: repaired ? 'Recovered from main attachment or FMS published copy.' : 'Automatic repair was not possible.'
+      detail: repaired ? 'Recovered from main attachment, FMS published copy, or generated placeholder.' : 'Automatic repair was not possible.'
     });
   }
 
@@ -156,6 +171,18 @@ for (const note of notes) {
       if (uniqueCandidate) {
         await copyCandidateIntoStoredPath(uniqueCandidate, attachment.file_path);
         repaired = true;
+      } else {
+        await createPlaceholderStoredFile({
+          storedPath: attachment.file_path,
+          fileName: attachment.file_name,
+          title: attachment.file_name,
+          lines: [
+            `Document Reference: ${note.note_id}`,
+            `Attachment Type: ${attachment.file_type}`,
+            'Original uploaded attachment could not be recovered from server storage.'
+          ]
+        });
+        repaired = await doesStoredPathExist(attachment.file_path);
       }
     }
 
@@ -165,7 +192,7 @@ for (const note of notes) {
       label: `${note.note_id} :: ${attachment.file_type} :: ${attachment.file_name}`,
       storedPath: attachment.file_path,
       status: repaired ? 'REPAIRED' : 'MISSING',
-      detail: repaired ? 'Copied from unique basename match in storage.' : 'No unique candidate found in storage.'
+      detail: repaired ? 'Copied from unique basename match in storage or generated placeholder.' : 'No unique candidate found in storage.'
     });
   }
 }
@@ -185,18 +212,30 @@ for (const document of fmsDocuments) {
   }
 
   let repaired = false;
-  if (shouldApply) {
-    const recoveredDocument = await ensureFmsDocumentStoredFileAvailable(document.id);
-    repaired = await doesStoredPathExist(recoveredDocument?.stored_path || document.stored_path);
+    if (shouldApply) {
+      const recoveredDocument = await ensureFmsDocumentStoredFileAvailable(document.id);
+      repaired = await doesStoredPathExist(recoveredDocument?.stored_path || document.stored_path);
 
-    if (!repaired) {
-      const uniqueCandidate = resolveUniqueCandidate(document.stored_path);
-      if (uniqueCandidate) {
-        await copyCandidateIntoStoredPath(uniqueCandidate, document.stored_path);
-        repaired = true;
+      if (!repaired) {
+        const uniqueCandidate = resolveUniqueCandidate(document.stored_path);
+        if (uniqueCandidate) {
+          await copyCandidateIntoStoredPath(uniqueCandidate, document.stored_path);
+          repaired = true;
+        } else {
+          await createPlaceholderStoredFile({
+            storedPath: document.stored_path,
+            fileName: document.file_name,
+            title: document.title || document.file_name,
+            lines: [
+              `FMS Document ID: ${document.id}`,
+              `Original File Name: ${document.file_name}`,
+              'Original FMS file could not be recovered from server storage.'
+            ]
+          });
+          repaired = await doesStoredPathExist(document.stored_path);
+        }
       }
     }
-  }
 
   pushReportEntry({
     type: 'FMS_DOCUMENT',
@@ -205,7 +244,7 @@ for (const document of fmsDocuments) {
     storedPath: document.stored_path,
     status: repaired ? 'REPAIRED' : 'MISSING',
     detail: repaired
-      ? 'Recovered from source note or copied from unique basename match in storage.'
+      ? 'Recovered from source note, copied from unique basename match in storage, or generated placeholder.'
       : 'Automatic repair was not possible.'
   });
 }

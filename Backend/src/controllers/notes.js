@@ -17,7 +17,7 @@ import {
 } from '../services/fmsService.js';
 import { createNotification } from '../services/notificationService.js';
 import { sendOperationalNotificationEmail } from '../services/emailService.js';
-import { ensureNoteApprovedArtifactAvailable } from '../services/storageRecoveryService.js';
+import { ensureNoteApprovedArtifactAvailable, ensureNoteAttachmentAvailable } from '../services/storageRecoveryService.js';
 import { extractTextFromImage, extractTextFromPdf, deriveFieldsFromText } from '../utils/ocr.js';
 import { enableDemoFeatures } from '../config/env.js';
 import { writeSecurityAudit } from '../utils/securityAudit.js';
@@ -2614,6 +2614,7 @@ export const streamAttachmentFile = async (req, res) => {
     if (!attachment) {
       return res.status(404).json({ error: 'Attachment not found.' });
     }
+    await ensureNoteAttachmentAvailable({ note, attachment });
     const attachmentName = normalizeDisplayFileName(attachment.file_name || '');
 
     const disposition = String(req.query.disposition || 'inline').toLowerCase() === 'attachment' ? 'attachment' : 'inline';

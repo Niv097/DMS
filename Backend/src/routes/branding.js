@@ -7,6 +7,7 @@ import {
   brandSubtitle,
   brandWatermarkText
 } from '../config/env.js';
+import { ensureTenantLogoStoredFileAvailable } from '../services/storageRecoveryService.js';
 import { resolveStoredPath } from '../utils/storage.js';
 
 const router = express.Router();
@@ -104,6 +105,7 @@ router.get('/logo/:id', async (req, res) => {
       return res.status(404).end();
     }
 
+    await ensureTenantLogoStoredFileAvailable(tenant);
     return res.sendFile(resolveStoredPath(tenant.brand_logo_path));
   } catch {
     return res.status(404).end();

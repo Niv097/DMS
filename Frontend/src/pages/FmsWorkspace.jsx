@@ -831,6 +831,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
   const [libraryStandardsForm, setLibraryStandardsForm] = useState(emptyLibraryStandardsForm);
   const [selectedAccessCard, setSelectedAccessCard] = useState(null);
   const [forwardingRecipient, setForwardingRecipient] = useState(null);
+  const [resubmittingDistribution, setResubmittingDistribution] = useState(null);
   const [inlinePromptDocumentId, setInlinePromptDocumentId] = useState(null);
   const [tenantScopeId, setTenantScopeId] = useState(user?.tenant_id || null);
   const [libraryDesk, setLibraryDesk] = useState('tree');
@@ -2274,6 +2275,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
     setDistributionModalAnchor(null);
     setDistributionModalPosition(null);
     setForwardingRecipient(null);
+    setResubmittingDistribution(null);
     setDistributionForm(emptyDistributionForm);
   };
 
@@ -2282,6 +2284,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
     captureDistributionModalAnchor(event);
     setSelectedDocument(documentItem);
     setForwardingRecipient(null);
+    setResubmittingDistribution(null);
     setDistributionForm(emptyDistributionForm);
     setShowDistributionModal(true);
   };
@@ -2322,6 +2325,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
     captureDistributionModalAnchor(event);
     setSelectedDocument(resolvedDocument);
     setForwardingRecipient(recipient);
+    setResubmittingDistribution(null);
     setDistributionForm({
       ...emptyDistributionForm,
       title: recipient.distribution.title || resolvedDocument.title || '',
@@ -2332,6 +2336,34 @@ const FmsWorkspace = ({ section = 'register' }) => {
       allow_redistribution: false,
       parent_distribution_id: String(recipient.distribution.id),
       source_recipient_id: String(recipient.id)
+    });
+    setShowDistributionModal(true);
+  };
+
+  const prepareResubmitDistribution = (event, distribution, documentItem = null) => {
+    if (!distribution?.id) return;
+    const resolvedDocument = documentItem || distribution.document || selectedDocumentDetail || null;
+    const primaryRecipient = Array.isArray(distribution.recipients) ? distribution.recipients[0] : null;
+    if (!resolvedDocument?.id || !primaryRecipient?.target_type) return;
+
+    captureDistributionModalAnchor(event);
+    setSelectedDocument(resolvedDocument);
+    setForwardingRecipient(null);
+    setResubmittingDistribution(distribution);
+    setDistributionForm({
+      ...emptyDistributionForm,
+      target_type: primaryRecipient.target_type || 'USER',
+      target_user_id: primaryRecipient.target_type === 'USER' ? String(primaryRecipient.target_user?.id || '') : '',
+      target_branch_id: primaryRecipient.target_type === 'BRANCH' ? String(primaryRecipient.target_branch?.id || '') : '',
+      target_department_master_id: primaryRecipient.target_type === 'DEPARTMENT' ? String(primaryRecipient.target_department_master?.id || '') : '',
+      title: distribution.title || resolvedDocument.title || '',
+      instruction_type: distribution.instruction_type || 'INFORMATION',
+      message: distribution.message || '',
+      due_at: distribution.due_at ? String(distribution.due_at).slice(0, 16) : '',
+      access_level: distribution.access_level || 'VIEW',
+      allow_redistribution: Boolean(distribution.allow_redistribution),
+      parent_distribution_id: String(distribution.id),
+      source_recipient_id: ''
     });
     setShowDistributionModal(true);
   };
@@ -2357,6 +2389,7 @@ const FmsWorkspace = ({ section = 'register' }) => {
       setShowDistributionModal(false);
       setDistributionForm(emptyDistributionForm);
       setForwardingRecipient(null);
+      setResubmittingDistribution(null);
       setMessage(distributionForm.target_type === 'BANK_WIDE' ? 'Mandatory bank-wide circular released successfully.' : 'Controlled circular shared successfully.');
       await Promise.all([
         openDocument(selectedDocumentDetail.id, { skipScroll: true }),
@@ -2768,10 +2801,12 @@ const FmsWorkspace = ({ section = 'register' }) => {
             } : undefined}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="fms-modal-eyebrow">Controlled Circular Release</div>
-            <div className="fms-modal-title" id="fms-distribution-modal-title">Release Controlled Circular</div>
+            <div className="fms-modal-eyebrow">{resubmittingDistribution ? 'Controlled Circular Re-release' : 'Controlled Circular Release'}</div>
+            <div className="fms-modal-title" id="fms-distribution-modal-title">{resubmittingDistribution ? 'Re-release Controlled Circular' : 'Release Controlled Circular'}</div>
             <div className="fms-modal-copy">
-              Send this circular to the required user, branch, department, or full bank audience from one clear banking pop-up.
+              {resubmittingDistribution
+                ? 'Send this circular again to the same target scope so the latest release becomes the active instruction.'
+                : 'Send this circular to the required user, branch, department, or full bank audience from one clear banking pop-up.'}
             </div>
             <div className="fms-share-card">
               <span>Selected Circular</span>
@@ -2798,10 +2833,19 @@ const FmsWorkspace = ({ section = 'register' }) => {
                   <div className="action-row" style={{ marginTop: '10px' }}>
                     <button type="button" className="btn btn-outline btn-sm" onClick={() => {
                       setForwardingRecipient(null);
+                      setResubmittingDistribution(null);
                       setDistributionForm(emptyDistributionForm);
                     }}>
                       Clear Forward Mode
                     </button>
+                  </div>
+                </div>
+              )}
+              {resubmittingDistribution && (
+                <div className="fms-empty-box" style={{ marginBottom: '14px' }}>
+                  <strong>Re-release Mode</strong>
+                  <div className="text-muted text-sm">
+                    This will send the circular again to the same target scope and replace the older active release for that target.
                   </div>
                 </div>
               )}
@@ -2895,7 +2939,9 @@ const FmsWorkspace = ({ section = 'register' }) => {
               <div className="fms-modal-actions fms-modal-form-actions">
                 <button type="button" className="btn btn-outline" onClick={closeDistributionModal} disabled={saving}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {distributionForm.target_type === 'BANK_WIDE' ? 'Release Mandatory Circular' : 'Release Circular'}
+                  {resubmittingDistribution
+                    ? 'Re-release Circular'
+                    : (distributionForm.target_type === 'BANK_WIDE' ? 'Release Mandatory Circular' : 'Release Circular')}
                 </button>
               </div>
             </form>
@@ -3188,13 +3234,27 @@ const FmsWorkspace = ({ section = 'register' }) => {
                         <div className="fms-action-list" style={{ minWidth: '220px', alignItems: 'flex-end' }}>
                           <span className="fms-share-pill">{documentItem.viewer_access_level === 'DOWNLOAD' ? 'VIEW + DOWNLOAD' : 'VIEW'}</span>
                           {canManageLibrary && (
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-sm"
-                              onClick={(event) => openDistributionModalForDocument(event, documentItem)}
-                            >
-                              Release Circular
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                className="btn btn-outline btn-sm"
+                                onClick={(event) => openDistributionModalForDocument(event, documentItem)}
+                              >
+                                Release Circular
+                              </button>
+                              {mandatoryDistributions.some((distribution) => String(distribution.document?.id || '') === String(documentItem.id)) && (
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-sm"
+                                  onClick={(event) => {
+                                    const activeDistribution = mandatoryDistributions.find((distribution) => String(distribution.document?.id || '') === String(documentItem.id));
+                                    if (activeDistribution) prepareResubmitDistribution(event, activeDistribution, documentItem);
+                                  }}
+                                >
+                                  Re-release
+                                </button>
+                              )}
+                            </>
                           )}
                           <button type="button" className="btn btn-outline btn-sm" onClick={() => downloadDocument(documentItem, 'inline')}>
                             View
@@ -3252,14 +3312,23 @@ const FmsWorkspace = ({ section = 'register' }) => {
                                   </div>
                                 )}
                               </div>
-                              <div className="fms-action-list" style={{ minWidth: '220px', alignItems: 'flex-end' }}>
-                                {showOperatorCircularCards ? <span className="fms-share-pill">{item.status}</span> : null}
-                                {item.document?.id ? (
-                                  <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document && downloadDocument(item.document, 'inline')}>View</button>
-                                ) : null}
-                                {isBankAdminRole ? (
-                                  <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document?.id && openDocumentPage(item.document.id)}>View Circular</button>
-                                ) : null}
+                      <div className="fms-action-list" style={{ minWidth: '220px', alignItems: 'flex-end' }}>
+                        {showOperatorCircularCards ? <span className="fms-share-pill">{item.status}</span> : null}
+                        {item.document?.id ? (
+                          <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document && downloadDocument(item.document, 'inline')}>View</button>
+                        ) : null}
+                        {isBankAdminRole && item.document?.id ? (
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            onClick={(event) => prepareResubmitDistribution(event, item.distribution, item.document)}
+                          >
+                            Re-release
+                          </button>
+                        ) : null}
+                        {isBankAdminRole ? (
+                          <button type="button" className="btn btn-outline btn-sm" onClick={() => item.document?.id && openDocumentPage(item.document.id)}>View Circular</button>
+                        ) : null}
                                 {(item.document?.can_download || item.document?.viewer_access_level === 'DOWNLOAD' || item.distribution?.access_level === 'DOWNLOAD') && (
                                   <button
                                     type="button"
@@ -3389,6 +3458,15 @@ const FmsWorkspace = ({ section = 'register' }) => {
                             Completed: {distribution.completed_recipients.map((recipient) => recipient.target_user?.name || recipient.target_label).join(' | ')}
                           </div>
                         )}
+                      </div>
+                      <div className="fms-action-list" style={{ minWidth: '220px', alignItems: 'flex-end' }}>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm"
+                          onClick={(event) => prepareResubmitDistribution(event, distribution, distribution.document)}
+                        >
+                          Re-release
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -4426,6 +4504,15 @@ const FmsWorkspace = ({ section = 'register' }) => {
                             <div className="text-muted text-sm" style={{ marginTop: '6px' }}>
                               {distribution.recipients.map((recipient) => `${recipient.target_label} - ${recipient.status}${recipient.can_forward ? ' - can forward' : ''}`).join(' | ')}
                             </div>
+                          </div>
+                          <div className="fms-action-list" style={{ minWidth: '220px', alignItems: 'flex-end' }}>
+                            <button
+                              type="button"
+                              className="btn btn-outline btn-sm"
+                              onClick={(event) => prepareResubmitDistribution(event, distribution, selectedDocumentDetail)}
+                            >
+                              Re-release
+                            </button>
                           </div>
                         </div>
                       ))}

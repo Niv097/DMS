@@ -2375,8 +2375,20 @@ const FmsWorkspace = ({ section = 'register' }) => {
     setSaving(true);
     setMessage('');
     try {
+      const normalizedMessage = String(distributionForm.message || resubmittingDistribution?.message || '').trim();
+      const normalizedTitle = String(distributionForm.title || resubmittingDistribution?.title || selectedDocumentDetail.title || '').trim();
+      if (normalizedMessage.length < 5) {
+        setMessage('Instruction message is required.');
+        return;
+      }
+      if (normalizedTitle.length < 3) {
+        setMessage('Distribution title is required.');
+        return;
+      }
       const payload = {
         ...distributionForm,
+        title: normalizedTitle,
+        message: normalizedMessage,
         target_user_id: distributionForm.target_type === 'USER' ? distributionForm.target_user_id : '',
         target_branch_id: distributionForm.target_type === 'BRANCH' ? distributionForm.target_branch_id : '',
         target_department_master_id: distributionForm.target_type === 'DEPARTMENT' ? distributionForm.target_department_master_id : '',
